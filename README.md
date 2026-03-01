@@ -59,7 +59,7 @@ echo "$(pwd)/build/index.js"
 
 ## Install via GitHub Packages
 
-The easiest way to use this MCP server — no cloning, building, or source code management required. The package is **private** and only accessible to members of the GitHub org.
+The easiest way to use this MCP server — no cloning, building, or source code management required. The package is **private** and only accessible to members of the `DanStuartDept` GitHub organisation.
 
 ### One-time setup
 
