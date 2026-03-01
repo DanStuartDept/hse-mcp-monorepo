@@ -1,0 +1,193 @@
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import {
+  buildQueryString,
+  searchLocations,
+  getLocation,
+  searchServices,
+  getService,
+  searchServiceProviders,
+  getServiceProvider,
+  listSpecialDays,
+  getSpecialDay,
+  BASE_URL,
+} from "../hse-api.js";
+
+// Mock global fetch
+const mockFetch = vi.fn();
+vi.stubGlobal("fetch", mockFetch);
+
+beforeEach(() => {
+  mockFetch.mockReset();
+});
+
+describe("buildQueryString", () => {
+  it("returns empty string for empty params", () => {
+    expect(buildQueryString({})).toBe("");
+  });
+
+  it("builds query string from simple params", () => {
+    const result = buildQueryString({ name: "Dublin", county: "Dublin" });
+    expect(result).toBe("?name=Dublin&county=Dublin");
+  });
+
+  it("skips undefined values", () => {
+    const result = buildQueryString({ name: "test", county: undefined });
+    expect(result).toBe("?name=test");
+  });
+
+  it("handles numeric values", () => {
+    const result = buildQueryString({ page: 2, page_size: 10 });
+    expect(result).toBe("?page=2&page_size=10");
+  });
+
+  it("handles array values with multiple entries", () => {
+    const result = buildQueryString({ tag: ["urgent", "walk-in"] });
+    expect(result).toBe("?tag=urgent&tag=walk-in");
+  });
+});
+
+function mockSuccessResponse(data: unknown) {
+  mockFetch.mockResolvedValueOnce({
+    ok: true,
+    json: () => Promise.resolve(data),
+  });
+}
+
+function mockErrorResponse(status: number, statusText: string) {
+  mockFetch.mockResolvedValueOnce({
+    ok: false,
+    status,
+    statusText,
+  });
+}
+
+describe("searchLocations", () => {
+  it("calls the correct URL with no params", async () => {
+    const mockData = { count: 0, next: null, previous: null, results: [] };
+    mockSuccessResponse(mockData);
+
+    const result = await searchLocations();
+    expect(mockFetch).toHaveBeenCalledWith(`${BASE_URL}/location/`);
+    expect(result).toEqual(mockData);
+  });
+
+  it("calls the correct URL with params", async () => {
+    const mockData = { count: 1, next: null, previous: null, results: [{ name: "Test" }] };
+    mockSuccessResponse(mockData);
+
+    await searchLocations({ name: "Dublin", county: "Dublin" });
+    expect(mockFetch).toHaveBeenCalledWith(
+      `${BASE_URL}/location/?name=Dublin&county=Dublin`,
+    );
+  });
+
+  it("throws on API error", async () => {
+    mockErrorResponse(500, "Internal Server Error");
+    await expect(searchLocations()).rejects.toThrow("HSE API error: 500");
+  });
+});
+
+describe("getLocation", () => {
+  it("calls the correct URL with slug", async () => {
+    const mockData = { id: 1, name: "Test Location", slug: "test-location" };
+    mockSuccessResponse(mockData);
+
+    const result = await getLocation("test-location");
+    expect(mockFetch).toHaveBeenCalledWith(`${BASE_URL}/location/test-location/`);
+    expect(result).toEqual(mockData);
+  });
+
+  it("encodes special characters in slug", async () => {
+    mockSuccessResponse({ id: 1, name: "Test" });
+    await getLocation("test location");
+    expect(mockFetch).toHaveBeenCalledWith(`${BASE_URL}/location/test%20location/`);
+  });
+});
+
+describe("searchServices", () => {
+  it("calls the correct URL with no params", async () => {
+    const mockData = { count: 0, next: null, previous: null, results: [] };
+    mockSuccessResponse(mockData);
+
+    const result = await searchServices();
+    expect(mockFetch).toHaveBeenCalledWith(`${BASE_URL}/service/`);
+    expect(result).toEqual(mockData);
+  });
+
+  it("calls the correct URL with params", async () => {
+    mockSuccessResponse({ count: 0, next: null, previous: null, results: [] });
+    await searchServices({ kind: "pharmacy", page: 1 });
+    expect(mockFetch).toHaveBeenCalledWith(
+      `${BASE_URL}/service/?kind=pharmacy&page=1`,
+    );
+  });
+});
+
+describe("getService", () => {
+  it("calls the correct URL with slug", async () => {
+    const mockData = { name: "Test Service", slug: "test-service" };
+    mockSuccessResponse(mockData);
+
+    const result = await getService("test-service");
+    expect(mockFetch).toHaveBeenCalledWith(`${BASE_URL}/service/test-service/`);
+    expect(result).toEqual(mockData);
+  });
+});
+
+describe("searchServiceProviders", () => {
+  it("calls the correct URL with no params", async () => {
+    const mockData = { count: 0, next: null, previous: null, results: [] };
+    mockSuccessResponse(mockData);
+
+    const result = await searchServiceProviders();
+    expect(mockFetch).toHaveBeenCalledWith(`${BASE_URL}/service-provider/`);
+    expect(result).toEqual(mockData);
+  });
+
+  it("calls the correct URL with params", async () => {
+    mockSuccessResponse({ count: 0, next: null, previous: null, results: [] });
+    await searchServiceProviders({ name: "HSE", kind: "hospital" });
+    expect(mockFetch).toHaveBeenCalledWith(
+      `${BASE_URL}/service-provider/?name=HSE&kind=hospital`,
+    );
+  });
+});
+
+describe("getServiceProvider", () => {
+  it("calls the correct URL with id", async () => {
+    const mockData = { name: "Test Provider" };
+    mockSuccessResponse(mockData);
+
+    const result = await getServiceProvider(42);
+    expect(mockFetch).toHaveBeenCalledWith(`${BASE_URL}/service-provider/42/`);
+    expect(result).toEqual(mockData);
+  });
+});
+
+describe("listSpecialDays", () => {
+  it("calls the correct URL with no params", async () => {
+    const mockData = { count: 0, next: null, previous: null, results: [] };
+    mockSuccessResponse(mockData);
+
+    const result = await listSpecialDays();
+    expect(mockFetch).toHaveBeenCalledWith(`${BASE_URL}/special-days/`);
+    expect(result).toEqual(mockData);
+  });
+
+  it("calls the correct URL with page param", async () => {
+    mockSuccessResponse({ count: 0, next: null, previous: null, results: [] });
+    await listSpecialDays({ page: 2 });
+    expect(mockFetch).toHaveBeenCalledWith(`${BASE_URL}/special-days/?page=2`);
+  });
+});
+
+describe("getSpecialDay", () => {
+  it("calls the correct URL with id", async () => {
+    const mockData = { id: 1, name: "Christmas Day", date: "2024-12-25" };
+    mockSuccessResponse(mockData);
+
+    const result = await getSpecialDay(1);
+    expect(mockFetch).toHaveBeenCalledWith(`${BASE_URL}/special-days/1/`);
+    expect(result).toEqual(mockData);
+  });
+});
