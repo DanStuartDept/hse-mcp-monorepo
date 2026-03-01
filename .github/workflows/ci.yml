@@ -38,3 +38,26 @@ jobs:
 
       - name: Test
         run: npm test
+
+  commitlint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint commits (PR)
+        if: github.event_name == 'pull_request'
+        run: npx commitlint --last --verbose
+
+      - name: Lint commits (push)
+        if: github.event_name == 'push'
+        run: npx commitlint --from ${{ github.event.before }} --to ${{ github.sha }} --verbose
