@@ -2,6 +2,15 @@
 
 A TypeScript [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server that wraps the **HSE Service Finder API** — Ireland's public health service directory. It runs locally via **stdio transport** and exposes tools for searching and retrieving health service locations, services, service providers, and special days.
 
+### Supported Clients
+
+[![Claude Code](https://img.shields.io/badge/Claude_Code-black?style=flat-square&logo=anthropic&logoColor=white)](#claude-code)
+[![Claude Desktop](https://img.shields.io/badge/Claude_Desktop-black?style=flat-square&logo=anthropic&logoColor=white)](#claude-desktop)
+[![Cursor](https://img.shields.io/badge/Cursor-000000?style=flat-square&logo=cursor&logoColor=white)](#cursor)
+[![VS Code](https://img.shields.io/badge/VS_Code-0098FF?style=flat-square&logo=visualstudiocode&logoColor=white)](#vs-code--github-copilot)
+[![JetBrains](https://img.shields.io/badge/JetBrains-FF318C?style=flat-square&logo=jetbrains&logoColor=white)](#jetbrains-ides-webstorm-intellij-etc)
+[![Windsurf](https://img.shields.io/badge/Windsurf-00B4D8?style=flat-square&logo=codeium&logoColor=white)](#windsurf)
+
 ## Features
 
 - Search & retrieve **locations** (hospitals, health centres, pharmacies, etc.)
@@ -9,77 +18,78 @@ A TypeScript [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) se
 - Search & retrieve **service providers**
 - List and look up **special days** (public holidays affecting opening hours)
 
-## Tech Stack
-
-- **TypeScript** with ES modules (target: ES2022, module: Node16)
-- **@modelcontextprotocol/sdk** — `McpServer` + `StdioServerTransport`
-- **Zod** for input validation
-- **Node.js native `fetch`** (Node 18+)
-
-## Prerequisites
-
-- [Node.js](https://nodejs.org/) 18 or later
-
-## Setup
-
-```bash
-# Install dependencies
-npm install
-
-# Build
-npm run build
-
-# Run tests
-npm test
-```
-
-## Available Scripts
-
-| Script             | Description                                    |
-| ------------------ | ---------------------------------------------- |
-| `npm run build`    | Compile TypeScript and make the entry executable |
-| `npm test`         | Run unit tests with Vitest                     |
-| `npm run test:watch` | Run tests in watch mode                      |
-| `npm run lint`     | Lint source files with ESLint                  |
-| `npm run typecheck`| Type-check without emitting files              |
-| `npm run inspector`| Launch the MCP Inspector UI                   |
-
 ## Tools
 
-### Location Tools
+| Tool | Description |
+|------|-------------|
+| `search_locations` | Search locations by name, county, kind, geo-coordinates, opening hours, health region, or tags |
+| `get_location` | Get full details for a specific location (address, hours, contacts, facilities, services) |
+| `search_services` | Search for health services — filter by name, kind, age, location, health region |
+| `get_service` | Get full details for a specific service |
+| `search_service_providers` | Search for service provider organisations |
+| `get_service_provider` | Get details for a specific service provider |
+| `list_special_days` | List bank holidays and special days affecting service hours |
+| `get_special_day` | Get details for a specific special day |
 
-| Tool                | Description                                                  |
-| ------------------- | ------------------------------------------------------------ |
-| `search_locations`  | Search locations by name, county, kind, geo-coordinates, tags, opening hours, and more |
-| `get_location`      | Get full details for a single location by its slug           |
+---
 
-### Service Tools
+## Getting Started
 
-| Tool                | Description                                                  |
-| ------------------- | ------------------------------------------------------------ |
-| `search_services`   | Search services by name, kind, location, age eligibility, and more |
-| `get_service`       | Get full details for a single service by its slug            |
+### Prerequisites
 
-### Service Provider Tools
+- [Node.js](https://nodejs.org/) **18 or later**
 
-| Tool                       | Description                                           |
-| -------------------------- | ----------------------------------------------------- |
-| `search_service_providers` | Search service providers by name or kind              |
-| `get_service_provider`     | Get full details for a single service provider by ID  |
+### Build
 
-### Special Days Tools
+```bash
+git clone https://github.com/DanStuartDept/hse-servicefinder-mcp.git
+cd hse-servicefinder-mcp
+npm install
+npm run build
+```
 
-| Tool                | Description                                                  |
-| ------------------- | ------------------------------------------------------------ |
-| `list_special_days` | List special days (e.g., public holidays) affecting opening hours |
-| `get_special_day`   | Get details for a single special day by ID                   |
+Note the **absolute path** to `build/index.js` — you'll need it for client configuration:
 
-## Claude Desktop Configuration
+```bash
+# Print the full path you'll use below
+echo "$(pwd)/build/index.js"
+```
 
-Add the following to your Claude Desktop configuration file:
+---
 
-- **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
-- **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+## Client Setup
+
+Pick whichever client you use — each section is self-contained.
+
+### Claude Code
+
+Run from your terminal:
+
+```bash
+claude mcp add hse-servicefinder node /absolute/path/to/hse-servicefinder-mcp/build/index.js
+```
+
+To scope it to a specific project only:
+
+```bash
+claude mcp add --scope project hse-servicefinder node /absolute/path/to/hse-servicefinder-mcp/build/index.js
+```
+
+**Verify:** `claude mcp list` — you should see `hse-servicefinder` listed with its 8 tools.
+
+---
+
+### Claude Desktop
+
+Edit your `claude_desktop_config.json`:
+
+| OS | Config file location |
+|----|---------------------|
+| macOS | `~/Library/Application Support/Claude/claude_desktop_config.json` |
+| Windows | `%APPDATA%\Claude\claude_desktop_config.json` |
+| Linux | `~/.config/Claude/claude_desktop_config.json` |
+
+Add the following:
 
 ```json
 {
@@ -92,9 +102,216 @@ Add the following to your Claude Desktop configuration file:
 }
 ```
 
-Replace `/absolute/path/to/` with the actual path to this project.
+**Verify:**
 
-## Project Structure
+1. **Quit** Claude Desktop completely (not just close the window) and reopen it
+2. Look for the **hammer icon** (🔨) at the bottom of the chat input
+3. Click it — you should see the 8 HSE Service Finder tools listed
+
+---
+
+### Cursor
+
+Cursor supports both **global** and **project-level** MCP config.
+
+**Global** — edit `~/.cursor/mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "hse-servicefinder": {
+      "command": "node",
+      "args": ["/absolute/path/to/hse-servicefinder-mcp/build/index.js"]
+    }
+  }
+}
+```
+
+**Project-level** — create `.cursor/mcp.json` in your project root with the same content.
+
+**Verify:**
+
+1. Open **Cursor Settings** → **Tools & Integrations** → **MCP Tools**
+2. `hse-servicefinder` should appear with a green status indicator
+3. In Cursor's Agent mode chat, the tools will be available automatically
+
+---
+
+### VS Code + GitHub Copilot
+
+Requires **VS Code 1.99+** and the **GitHub Copilot Chat** extension.
+
+**Workspace config** (recommended — can be committed to version control) — create `.vscode/mcp.json` in your project root:
+
+```json
+{
+  "servers": {
+    "hse-servicefinder": {
+      "command": "node",
+      "args": ["/absolute/path/to/hse-servicefinder-mcp/build/index.js"]
+    }
+  }
+}
+```
+
+**User-level config** — run **MCP: Open User Configuration** from the Command Palette (`Cmd+Shift+P` / `Ctrl+Shift+P`) and add the same config.
+
+> **Note:** VS Code uses `"servers"` as the key (not `"mcpServers"`).
+
+**Verify:**
+
+1. Open the `.vscode/mcp.json` file — you should see a **Start** button appear via CodeLens
+2. Click it to start the server
+3. Open Copilot Chat, switch to **Agent** mode
+4. Click the **tools icon** in the chat box to see the HSE tools listed
+
+---
+
+### JetBrains IDEs (WebStorm, IntelliJ, etc.)
+
+Requires version **2025.2+** with AI Assistant enabled.
+
+**Auto-configure** — go to **Settings** → **Tools** → **MCP Server** → **Enable MCP Server**. If you already have the server configured elsewhere, click **Auto-Configure**.
+
+**Manual config** — create `.mcp.json` in your project root:
+
+```json
+{
+  "mcpServers": {
+    "hse-servicefinder": {
+      "command": "node",
+      "args": ["/absolute/path/to/hse-servicefinder-mcp/build/index.js"]
+    }
+  }
+}
+```
+
+**Verify:**
+
+1. Open **Settings** → **Tools** → **MCP Server** to see the server status
+2. Tools will appear in the AI Assistant chat when using agent mode
+
+---
+
+### Windsurf
+
+**Config file:**
+
+```
+~/.codeium/windsurf/mcp_config.json
+```
+
+Or open it via: **Windsurf Settings** → **Cascade** → **MCP Servers** → **Edit Config**
+
+Add:
+
+```json
+{
+  "mcpServers": {
+    "hse-servicefinder": {
+      "command": "node",
+      "args": ["/absolute/path/to/hse-servicefinder-mcp/build/index.js"],
+      "disabled": false,
+      "alwaysAllow": []
+    }
+  }
+}
+```
+
+**Verify:**
+
+1. **Quit and reopen** Windsurf
+2. Open the **Cascade** panel → click the **MCPs icon** (top-right)
+3. `hse-servicefinder` should show with a green status
+
+> **Note:** Windsurf has a limit of 100 total tools across all MCP servers. This server uses 8.
+
+---
+
+### MCP Inspector (Testing & Debugging)
+
+A visual tool for testing the server interactively — great for debugging.
+
+```bash
+npm run inspector
+```
+
+Or run directly:
+
+```bash
+npx @modelcontextprotocol/inspector node /absolute/path/to/hse-servicefinder-mcp/build/index.js
+```
+
+This starts a web UI at `http://127.0.0.1:6274` where you can browse tools, test with custom parameters, and inspect responses.
+
+---
+
+## Quick Reference
+
+| Client | Config file | Key | Restart needed? |
+|--------|------------|-----|----------------|
+| Claude Code | CLI command | — | No |
+| Claude Desktop | `claude_desktop_config.json` | `mcpServers` | Yes (full quit) |
+| Cursor (global) | `~/.cursor/mcp.json` | `mcpServers` | Yes |
+| Cursor (project) | `.cursor/mcp.json` | `mcpServers` | Yes |
+| VS Code + Copilot (workspace) | `.vscode/mcp.json` | `servers` | No (click Start) |
+| VS Code + Copilot (user) | Command Palette → MCP: Open User Config | `servers` | No |
+| JetBrains | `.mcp.json` or Settings UI | `mcpServers` | No |
+| Windsurf | `~/.codeium/windsurf/mcp_config.json` | `mcpServers` | Yes (full quit) |
+| MCP Inspector | CLI command | — | — |
+
+## Troubleshooting
+
+### Server not connecting
+
+1. Make sure you've run `npm run build` and the `build/index.js` file exists
+2. Test the path works: `node /your/path/to/build/index.js` — it should hang (waiting for stdio input), not error
+3. Use **absolute paths**, not relative ones
+4. Check Node.js is v18+: `node --version`
+
+### Tools not showing up
+
+1. Some clients require a full quit and restart (not just close window)
+2. Check the MCP server logs in your client's developer tools / output panel
+3. Run the MCP Inspector to verify the server works independently
+
+### Permission errors on macOS
+
+If you see permission prompts on first run, grant them — the server needs to execute as a Node.js process. Subsequent runs should work without prompts.
+
+## Example Queries
+
+Once connected, try asking your AI assistant:
+
+- "Find hospitals in Cork"
+- "What pharmacies are open on Sundays in Dublin?"
+- "Show me mental health services near Galway"
+- "What services does Beaumont Hospital offer?"
+- "Are there any bank holiday opening hour changes coming up?"
+- "Find GPs in the South East health region"
+- "What health centres are within 10km of coordinates -6.26, 53.35?"
+
+## Development
+
+### Available Scripts
+
+| Script             | Description                                    |
+| ------------------ | ---------------------------------------------- |
+| `npm run build`    | Compile TypeScript and make the entry executable |
+| `npm test`         | Run unit tests with Vitest                     |
+| `npm run test:watch` | Run tests in watch mode                      |
+| `npm run lint`     | Lint source files with ESLint                  |
+| `npm run typecheck`| Type-check without emitting files              |
+| `npm run inspector`| Launch the MCP Inspector UI                   |
+
+### Tech Stack
+
+- **TypeScript** with ES modules (target: ES2022, module: Node16)
+- **@modelcontextprotocol/sdk** — `McpServer` + `StdioServerTransport`
+- **Zod** for input validation
+- **Node.js native `fetch`** (Node 18+)
+
+### Project Structure
 
 ```
 hse-servicefinder-mcp/
