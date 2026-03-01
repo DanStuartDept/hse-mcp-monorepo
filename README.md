@@ -442,4 +442,4 @@ hse-servicefinder-mcp/
 
 ## License
 
-MIT
+[MIT](https://opensource.org/licenses/MIT)
