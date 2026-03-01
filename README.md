@@ -57,7 +57,114 @@ echo "$(pwd)/build/index.js"
 
 ---
 
-## Client Setup
+## Install via GitHub Packages
+
+The easiest way to use this MCP server — no cloning, building, or source code management required. The package is **private** and only accessible to members of the GitHub org.
+
+### One-time setup
+
+Configure npm to use GitHub Packages for the `@danstuartdept` scope:
+
+1. Create a GitHub **Personal Access Token (classic)** with `read:packages` scope
+2. Add to your `~/.npmrc`:
+
+```
+@danstuartdept:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=YOUR_GITHUB_PAT
+```
+
+Then add the server to any MCP client using the configs below. The `-y` flag auto-confirms the npx install prompt. Package updates are published automatically when a new version is released.
+
+### Claude Code
+
+```bash
+claude mcp add hse-servicefinder npx -- -y @danstuartdept/hse-servicefinder-mcp
+```
+
+### Claude Desktop
+
+Edit your `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "hse-servicefinder": {
+      "command": "npx",
+      "args": ["-y", "@danstuartdept/hse-servicefinder-mcp"]
+    }
+  }
+}
+```
+
+### Cursor
+
+Edit `~/.cursor/mcp.json` (global) or `.cursor/mcp.json` (project-level):
+
+```json
+{
+  "mcpServers": {
+    "hse-servicefinder": {
+      "command": "npx",
+      "args": ["-y", "@danstuartdept/hse-servicefinder-mcp"]
+    }
+  }
+}
+```
+
+### VS Code + GitHub Copilot
+
+Create `.vscode/mcp.json` in your project root:
+
+```json
+{
+  "servers": {
+    "hse-servicefinder": {
+      "command": "npx",
+      "args": ["-y", "@danstuartdept/hse-servicefinder-mcp"]
+    }
+  }
+}
+```
+
+> **Note:** VS Code uses `"servers"` as the key (not `"mcpServers"`).
+
+### Windsurf
+
+Edit `~/.codeium/windsurf/mcp_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "hse-servicefinder": {
+      "command": "npx",
+      "args": ["-y", "@danstuartdept/hse-servicefinder-mcp"],
+      "disabled": false,
+      "alwaysAllow": []
+    }
+  }
+}
+```
+
+### JetBrains IDEs
+
+Create `.mcp.json` in your project root:
+
+```json
+{
+  "mcpServers": {
+    "hse-servicefinder": {
+      "command": "npx",
+      "args": ["-y", "@danstuartdept/hse-servicefinder-mcp"]
+    }
+  }
+}
+```
+
+---
+
+## Client Setup (from source)
+
+If you prefer to run from source instead of the package, clone and build first (see [Getting Started](#getting-started)), then use the configs below.
 
 Pick whichever client you use — each section is self-contained.
 
@@ -317,7 +424,9 @@ Once connected, try asking your AI assistant:
 hse-servicefinder-mcp/
 ├── .github/workflows/
 │   ├── ci.yml                # Lint + build + typecheck + test on PRs and pushes
+│   ├── publish.yml           # Publish to GitHub Packages on release
 │   └── release.yml           # Semantic version tag + changelog on main
+├── .npmrc                    # Registry config for @danstuartdept scope
 ├── src/
 │   ├── index.ts              # MCP server entry point — registers all tools, starts stdio transport
 │   ├── hse-api.ts            # HSE API client — typed fetch wrapper and endpoint functions
