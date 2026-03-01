@@ -1,11 +1,21 @@
 {
-  "name": "hse-servicefinder-mcp",
+  "name": "@danstuartdept/hse-servicefinder-mcp",
   "version": "1.0.0",
   "description": "MCP server for the HSE Service Finder API — Ireland's public health service directory",
   "type": "module",
   "main": "build/index.js",
   "bin": {
     "hse-servicefinder-mcp": "./build/index.js"
+  },
+  "files": [
+    "build"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DanStuartDept/hse-servicefinder-mcp.git"
+  },
+  "publishConfig": {
+    "@danstuartdept:registry": "https://npm.pkg.github.com"
   },
   "scripts": {
     "build": "tsc && chmod 755 build/index.js",
