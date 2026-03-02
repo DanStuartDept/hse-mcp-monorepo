@@ -2,7 +2,7 @@
 
 A TypeScript [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server that wraps the **HSE Service Finder API** — Ireland's public health service directory. It runs locally via **stdio transport** and exposes tools for searching and retrieving health service locations, services, service providers, and special days.
 
-### Supported Clients
+## Supported Clients
 
 [![Claude Code](https://img.shields.io/badge/Claude_Code-black?style=flat-square&logo=anthropic&logoColor=white)](#claude-code)
 [![Claude Desktop](https://img.shields.io/badge/Claude_Desktop-black?style=flat-square&logo=anthropic&logoColor=white)](#claude-desktop)
@@ -427,7 +427,6 @@ Once connected, try asking your AI assistant:
 hse-servicefinder-mcp/
 ├── .github/workflows/
 │   ├── ci.yml                # Lint + build + typecheck + test on PRs and pushes
-│   ├── publish.yml           # Publish to GitHub Packages on release
 │   └── release.yml           # Semantic version tag + changelog on main
 ├── .npmrc                    # Registry config for @danstuartdept scope
 ├── src/
