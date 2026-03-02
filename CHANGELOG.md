@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.0](https://github.com/DanStuartDept/hse-servicefinder-mcp/compare/v1.1.1...v1.2.0) (2026-03-02)
+
+
+### Features
+
+* align with official API docs and add service-kind endpoints ([9b12eb4](https://github.com/DanStuartDept/hse-servicefinder-mcp/commit/9b12eb4b3c18aa6fb928a57254af3a4d8931cb77))
+* align with official API docs and add service-kind endpoints ([a5fee56](https://github.com/DanStuartDept/hse-servicefinder-mcp/commit/a5fee5604f6a20031ff242cbbc4ef590e5fbc80b))
+
 ## [1.1.1](https://github.com/DanStuartDept/hse-servicefinder-mcp/compare/v1.1.0...v1.1.1) (2026-03-02)
 
 
