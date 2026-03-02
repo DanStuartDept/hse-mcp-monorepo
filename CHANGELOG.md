@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.1](https://github.com/DanStuartDept/hse-servicefinder-mcp/compare/v1.1.0...v1.1.1) (2026-03-02)
+
+
+### Bug Fixes
+
+* consolidate release and publish workflows into single workflow ([adc1a2f](https://github.com/DanStuartDept/hse-servicefinder-mcp/commit/adc1a2f0f0a683ba187c21959834b2b6bb8c93eb))
+
 ## [1.1.0](https://github.com/DanStuartDept/hse-servicefinder-mcp/compare/v1.0.0...v1.1.0) (2026-03-01)
 
 
