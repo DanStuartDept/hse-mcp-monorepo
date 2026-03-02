@@ -23,6 +23,8 @@ import {
   getServiceProvider,
   listSpecialDays,
   getSpecialDay,
+  searchServiceKinds,
+  getServiceKind,
 } from "./hse-api.js";
 
 /**
@@ -237,6 +239,54 @@ server.tool(
   },
   async (args) => {
     const result = await getServiceProvider(args.id);
+    return {
+      content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+    };
+  },
+);
+
+// ---------------------------------------------------------------------------
+// Service Kind Tools
+// ---------------------------------------------------------------------------
+
+/**
+ * Tool: search_service_kinds
+ *
+ * Lists HSE service kinds with optional collection filter.
+ */
+server.tool(
+  "search_service_kinds",
+  "List HSE service kinds, optionally filtered by collection slug.",
+  {
+    /** @param page - Page number for pagination. */
+    page: z.number().int().optional().describe("Page number for pagination"),
+    /** @param page_size - Number of results per page. */
+    page_size: z.number().int().optional().describe("Number of results per page"),
+    /** @param collection - Collection slug filter. */
+    collection: z.string().optional().describe("Filter by collection slug"),
+  },
+  async (args) => {
+    const result = await searchServiceKinds(args);
+    return {
+      content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+    };
+  },
+);
+
+/**
+ * Tool: get_service_kind
+ *
+ * Retrieves details about a specific HSE service kind identified by its slug.
+ */
+server.tool(
+  "get_service_kind",
+  "Get details about a specific HSE service kind by its slug.",
+  {
+    /** @param slug - The unique slug identifier of the service kind. */
+    slug: z.string().describe("The service kind slug identifier"),
+  },
+  async (args) => {
+    const result = await getServiceKind(args.slug);
     return {
       content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
     };

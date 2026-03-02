@@ -9,6 +9,8 @@ import {
   getServiceProvider,
   listSpecialDays,
   getSpecialDay,
+  searchServiceKinds,
+  getServiceKind,
   BASE_URL,
 } from "../hse-api.js";
 
@@ -189,5 +191,46 @@ describe("getSpecialDay", () => {
     const result = await getSpecialDay(1);
     expect(mockFetch).toHaveBeenCalledWith(`${BASE_URL}/special-days/1/`);
     expect(result).toEqual(mockData);
+  });
+});
+
+describe("searchServiceKinds", () => {
+  it("calls the correct URL with no params", async () => {
+    const mockData = { current_page: 1, count: 0, next: null, previous: null, results: [] };
+    mockSuccessResponse(mockData);
+
+    const result = await searchServiceKinds();
+    expect(mockFetch).toHaveBeenCalledWith(`${BASE_URL}/service-kind/`);
+    expect(result).toEqual(mockData);
+  });
+
+  it("calls the correct URL with params", async () => {
+    mockSuccessResponse({ current_page: 1, count: 0, next: null, previous: null, results: [] });
+    await searchServiceKinds({ collection: "vaccine", page: 1 });
+    expect(mockFetch).toHaveBeenCalledWith(
+      `${BASE_URL}/service-kind/?collection=vaccine&page=1`,
+    );
+  });
+
+  it("throws on API error", async () => {
+    mockErrorResponse(404, "Not Found");
+    await expect(searchServiceKinds()).rejects.toThrow("HSE API error: 404");
+  });
+});
+
+describe("getServiceKind", () => {
+  it("calls the correct URL with slug", async () => {
+    const mockData = { id: 1, name: "Vaccine", slug: "vaccine" };
+    mockSuccessResponse(mockData);
+
+    const result = await getServiceKind("vaccine");
+    expect(mockFetch).toHaveBeenCalledWith(`${BASE_URL}/service-kind/vaccine/`);
+    expect(result).toEqual(mockData);
+  });
+
+  it("encodes special characters in slug", async () => {
+    mockSuccessResponse({ id: 2, name: "Test Kind", slug: "test kind" });
+    await getServiceKind("test kind");
+    expect(mockFetch).toHaveBeenCalledWith(`${BASE_URL}/service-kind/test%20kind/`);
   });
 });

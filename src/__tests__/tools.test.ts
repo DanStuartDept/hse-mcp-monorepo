@@ -4,14 +4,16 @@ import { z } from "zod";
 
 // Mock the hse-api module
 vi.mock("../hse-api.js", () => ({
-  searchLocations: vi.fn().mockResolvedValue({ count: 0, next: null, previous: null, results: [] }),
+  searchLocations: vi.fn().mockResolvedValue({ current_page: 1, count: 0, next: null, previous: null, results: [] }),
   getLocation: vi.fn().mockResolvedValue({ id: 1, name: "Test", slug: "test" }),
-  searchServices: vi.fn().mockResolvedValue({ count: 0, next: null, previous: null, results: [] }),
+  searchServices: vi.fn().mockResolvedValue({ current_page: 1, count: 0, next: null, previous: null, results: [] }),
   getService: vi.fn().mockResolvedValue({ name: "Test Service", slug: "test-service" }),
-  searchServiceProviders: vi.fn().mockResolvedValue({ count: 0, next: null, previous: null, results: [] }),
+  searchServiceProviders: vi.fn().mockResolvedValue({ current_page: 1, count: 0, next: null, previous: null, results: [] }),
   getServiceProvider: vi.fn().mockResolvedValue({ name: "Test Provider" }),
-  listSpecialDays: vi.fn().mockResolvedValue({ count: 0, next: null, previous: null, results: [] }),
+  listSpecialDays: vi.fn().mockResolvedValue({ current_page: 1, count: 0, next: null, previous: null, results: [] }),
   getSpecialDay: vi.fn().mockResolvedValue({ id: 1, name: "Christmas", date: "2024-12-25" }),
+  searchServiceKinds: vi.fn().mockResolvedValue({ current_page: 1, count: 0, next: null, previous: null, results: [] }),
+  getServiceKind: vi.fn().mockResolvedValue({ id: 1, name: "Vaccine", slug: "vaccine" }),
 }));
 
 describe("MCP Server Tool Registration", () => {
@@ -146,6 +148,32 @@ describe("MCP Server Tool Registration", () => {
         "Get a specific special day",
         {
           id: z.number().int().describe("Special day ID"),
+        },
+        async () => ({
+          content: [{ type: "text" as const, text: "{}" }],
+        }),
+      );
+
+      // search_service_kinds
+      server.tool(
+        "search_service_kinds",
+        "List HSE service kinds",
+        {
+          page: z.number().int().optional().describe("Page number"),
+          page_size: z.number().int().optional().describe("Results per page"),
+          collection: z.string().optional().describe("Filter by collection slug"),
+        },
+        async () => ({
+          content: [{ type: "text" as const, text: "{}" }],
+        }),
+      );
+
+      // get_service_kind
+      server.tool(
+        "get_service_kind",
+        "Get a specific service kind",
+        {
+          slug: z.string().describe("Service kind slug"),
         },
         async () => ({
           content: [{ type: "text" as const, text: "{}" }],

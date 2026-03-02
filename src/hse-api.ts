@@ -2,7 +2,7 @@
  * Base URL for the HSE Service Finder API.
  * All endpoint requests are built relative to this URL.
  */
-const BASE_URL = "https://servicefinder.hse.ie/api";
+const BASE_URL = "https://servicefinder.hse.ie/servicefinder/v1";
 
 /**
  * Generic wrapper for paginated API responses from the HSE Service Finder API.
@@ -10,6 +10,8 @@ const BASE_URL = "https://servicefinder.hse.ie/api";
  * @typeParam T - The type of each item in the `results` array.
  */
 export interface PaginatedResponse<T> {
+  /** The current page number. */
+  current_page: number;
   /** Total number of results matching the query across all pages. */
   count: number;
   /** URL to the next page of results, or `null` if this is the last page. */
@@ -59,7 +61,7 @@ export interface LocationResult {
   /** ISO 8601 timestamp of the last update. */
   updated_at?: string;
   /** Active disruption notices for this location. */
-  disruptions?: string;
+  disruptions?: Disruption[];
   /** The Integrated Health Area (IHA) this location belongs to. */
   iha?: NestedIHA;
   /** Regular weekly opening hours for this location. */
@@ -272,6 +274,88 @@ export interface Tag {
 }
 
 /**
+ * An active disruption notice for a location or service.
+ */
+export interface Disruption {
+  /** Unique numeric identifier for the disruption. */
+  id: number;
+  /** Short title of the disruption. */
+  title: string;
+  /** Full description of the disruption. */
+  description: string;
+  /** ISO 8601 timestamp of the last update. */
+  updated_at: string;
+  /** ISO 8601 date when the disruption expires. */
+  expiration_date: string;
+  /** Whether to show a chip/badge indicator for this disruption. */
+  disruption_chip: boolean;
+}
+
+/**
+ * An additional custom field attached to a service.
+ */
+export interface AdditionalField {
+  /** Human-readable label for the field. */
+  label: string;
+  /** The field type identifier. */
+  field_type: string;
+  /** URL-friendly clean name for the field. */
+  clean_name: string;
+  /** Value of the field, or `null` if not set. */
+  value: string | null;
+}
+
+/**
+ * A medical specialty nested inside a service kind.
+ */
+export interface Specialty {
+  /** Display name of the specialty. */
+  name: string;
+  /** Optional description of the specialty. */
+  description?: string | null;
+}
+
+/**
+ * Detailed representation of a service kind as embedded in a service response.
+ */
+export interface ServiceKindDetail {
+  /** Display name of the service kind. */
+  name: string;
+  /** URL-friendly slug for the service kind. */
+  slug: string;
+  /** Optional description of the service kind. */
+  description?: string | null;
+  /** Name of the associated service provider, or `null`. */
+  service_provider?: string | null;
+  /** Optional specialty associated with this service kind. */
+  specialty?: Specialty | null;
+}
+
+/**
+ * A service kind entry returned by the service-kind list or detail endpoints.
+ */
+export interface ServiceKindResult {
+  /** Unique numeric identifier for the service kind. */
+  id?: number;
+  /** Display name of the service kind. */
+  name: string;
+  /** URL-friendly slug for the service kind. */
+  slug: string;
+}
+
+/**
+ * Query parameters for the service-kind list endpoint (`GET /service-kind/`).
+ */
+export interface ServiceKindSearchParams {
+  /** Page number within the paginated result set. */
+  page?: number;
+  /** Number of results to return per page. */
+  page_size?: number;
+  /** Filter by collection slug. */
+  collection?: string;
+}
+
+/**
  * Represents an HSE health service returned by the service search or detail endpoints.
  */
 export interface ServiceResult {
@@ -285,6 +369,8 @@ export interface ServiceResult {
   description?: string;
   /** The kind/type of service. */
   kind?: string;
+  /** Detailed service kind information. */
+  service_kind?: ServiceKindDetail;
   /** The location where this service is provided. */
   location?: LocationResult;
   /** Regular weekly opening hours for this service. */
@@ -297,6 +383,20 @@ export interface ServiceResult {
   availability?: Availability[];
   /** ISO 8601 timestamp of the last update. */
   updated_at?: string;
+  /** URL of the service's website. */
+  website_url?: string;
+  /** Whether the service is currently active. */
+  active?: boolean;
+  /** Additional custom fields attached to this service. */
+  additional_fields?: AdditionalField[];
+  /** ISO 8601 timestamp when this service was created. */
+  created_at?: string;
+  /** Social media profiles for this service. */
+  social_media?: SocialMedia[];
+  /** Active disruption notices for this service. */
+  disruptions?: Disruption[];
+  /** The department this service belongs to, or `null`. */
+  department?: Department | null;
 }
 
 /**
@@ -557,6 +657,27 @@ export async function listSpecialDays(params: SpecialDaysSearchParams = {}): Pro
  */
 export async function getSpecialDay(id: number): Promise<SpecialDayResult> {
   return fetchJson<SpecialDayResult>(`${BASE_URL}/special-days/${id}/`);
+}
+
+/**
+ * Searches for HSE service kinds with optional filters.
+ *
+ * @param params - Optional query parameters to filter and paginate results.
+ * @returns A paginated response containing matching {@link ServiceKindResult} items.
+ */
+export async function searchServiceKinds(params: ServiceKindSearchParams = {}): Promise<PaginatedResponse<ServiceKindResult>> {
+  const qs = buildQueryString(params as Record<string, string | number | string[] | undefined>);
+  return fetchJson<PaginatedResponse<ServiceKindResult>>(`${BASE_URL}/service-kind/${qs}`);
+}
+
+/**
+ * Retrieves detailed information about a single HSE service kind by its slug.
+ *
+ * @param slug - The unique slug identifier of the service kind.
+ * @returns The full {@link ServiceKindResult} for the requested service kind.
+ */
+export async function getServiceKind(slug: string): Promise<ServiceKindResult> {
+  return fetchJson<ServiceKindResult>(`${BASE_URL}/service-kind/${encodeURIComponent(slug)}/`);
 }
 
 // Exported for testing
