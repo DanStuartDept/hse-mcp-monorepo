@@ -16,6 +16,7 @@ A TypeScript [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) se
 - Search & retrieve **locations** (hospitals, health centres, pharmacies, etc.)
 - Search & retrieve **services** with age, kind, and geo-location filters
 - Search & retrieve **service providers**
+- Search & retrieve **service kinds**, optionally filtered by collection
 - List and look up **special days** (public holidays affecting opening hours)
 
 ## Tools
@@ -28,6 +29,8 @@ A TypeScript [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) se
 | `get_service` | Get full details for a specific service |
 | `search_service_providers` | Search for service provider organisations |
 | `get_service_provider` | Get details for a specific service provider |
+| `search_service_kinds` | List service kinds, optionally filtered by collection slug |
+| `get_service_kind` | Get details for a specific service kind by slug |
 | `list_special_days` | List bank holidays and special days affecting service hours |
 | `get_special_day` | Get details for a specific special day |
 
@@ -182,7 +185,7 @@ To scope it to a specific project only:
 claude mcp add --scope project hse-servicefinder node /absolute/path/to/hse-servicefinder-mcp/build/index.js
 ```
 
-**Verify:** `claude mcp list` — you should see `hse-servicefinder` listed with its 8 tools.
+**Verify:** `claude mcp list` — you should see `hse-servicefinder` listed with its 10 tools.
 
 ---
 
@@ -213,7 +216,7 @@ Add the following:
 
 1. **Quit** Claude Desktop completely (not just close the window) and reopen it
 2. Look for the **hammer icon** (🔨) at the bottom of the chat input
-3. Click it — you should see the 8 HSE Service Finder tools listed
+3. Click it — you should see the 10 HSE Service Finder tools listed
 
 ---
 
@@ -331,7 +334,7 @@ Add:
 2. Open the **Cascade** panel → click the **MCPs icon** (top-right)
 3. `hse-servicefinder` should show with a green status
 
-> **Note:** Windsurf has a limit of 100 total tools across all MCP servers. This server uses 8.
+> **Note:** Windsurf has a limit of 100 total tools across all MCP servers. This server uses 10.
 
 ---
 
