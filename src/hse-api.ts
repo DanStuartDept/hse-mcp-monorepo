@@ -735,5 +735,30 @@ export async function findServicesAtLocation(
   return { location, services };
 }
 
+/**
+ * Fetches all pages of a paginated HSE API endpoint by following `next` links.
+ * Intended for small, relatively static datasets only.
+ * Stops after MAX_PAGES pages as a safety cap.
+ *
+ * @typeParam T - The type of items in the results array.
+ * @param firstPageUrl - The URL of the first page to fetch.
+ * @returns All results aggregated across all pages.
+ */
+export async function fetchAll<T>(firstPageUrl: string): Promise<T[]> {
+  const results: T[] = [];
+  let url: string | null = firstPageUrl;
+  let pages = 0;
+  const MAX_PAGES = 20;
+
+  while (url !== null && pages < MAX_PAGES) {
+    const page: PaginatedResponse<T> = await fetchJson<PaginatedResponse<T>>(url);
+    results.push(...page.results);
+    url = page.next;
+    pages++;
+  }
+
+  return results;
+}
+
 // Exported for testing
 export { BASE_URL, buildQueryString, fetchJson };

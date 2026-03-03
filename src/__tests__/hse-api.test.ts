@@ -13,6 +13,7 @@ import {
   getServiceKind,
   findServicesAtLocation,
   cache,
+  fetchAll,
   BASE_URL,
 } from "../hse-api.js";
 
@@ -339,5 +340,74 @@ describe("cache", () => {
     expect(mockFetch).toHaveBeenCalledTimes(2);
 
     vi.useRealTimers();
+  });
+});
+
+describe("fetchAll", () => {
+  it("returns all results from a single page", async () => {
+    mockSuccessResponse({
+      current_page: 1,
+      count: 1,
+      next: null,
+      previous: null,
+      results: [{ id: 1 }],
+    });
+
+    const results = await fetchAll("http://example.com/api/items/");
+    expect(results).toEqual([{ id: 1 }]);
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("follows next links across multiple pages", async () => {
+    mockSuccessResponse({
+      current_page: 1,
+      count: 2,
+      next: "http://example.com/api/items/?page=2",
+      previous: null,
+      results: [{ id: 1 }],
+    });
+    mockSuccessResponse({
+      current_page: 2,
+      count: 2,
+      next: null,
+      previous: "http://example.com/api/items/",
+      results: [{ id: 2 }],
+    });
+
+    const results = await fetchAll("http://example.com/api/items/");
+    expect(results).toEqual([{ id: 1 }, { id: 2 }]);
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+    expect(mockFetch).toHaveBeenCalledWith("http://example.com/api/items/");
+    expect(mockFetch).toHaveBeenCalledWith("http://example.com/api/items/?page=2");
+  });
+
+  it("returns an empty array when results are empty", async () => {
+    mockSuccessResponse({
+      current_page: 1,
+      count: 0,
+      next: null,
+      previous: null,
+      results: [],
+    });
+
+    const results = await fetchAll("http://example.com/api/items/");
+    expect(results).toEqual([]);
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("stops at the safety cap of 20 pages", async () => {
+    for (let i = 0; i < 20; i++) {
+      mockSuccessResponse({
+        current_page: i + 1,
+        count: 100,
+        next: `http://example.com/api/items/?page=${i + 2}`,
+        previous: null,
+        results: [{ id: i + 1 }],
+      });
+    }
+
+    const results = await fetchAll("http://example.com/api/items/");
+    expect(results).toHaveLength(20);
+    expect(mockFetch).toHaveBeenCalledTimes(20);
   });
 });
