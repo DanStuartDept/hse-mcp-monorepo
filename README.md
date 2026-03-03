@@ -34,6 +34,16 @@ A TypeScript [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) se
 | `list_special_days` | List bank holidays and special days affecting service hours |
 | `get_special_day` | Get details for a specific special day |
 
+## Prompts
+
+Pre-built prompt templates for common HSE service queries. MCP clients can present these as quick-start actions.
+
+| Prompt | Arguments | Description |
+|--------|-----------|-------------|
+| `find-local-services` | `service_type` (required), `location` (required) | Find health services of a given type near a location in Ireland |
+| `check-opening-hours` | `service_name` (required), `day` (required), `time` (optional) | Check if a service is open on a specific day and optionally at a specific time |
+| `find-gp` | `location` (required) | Find GP (General Practitioner) services in a location in Ireland |
+
 ---
 
 ## Getting Started
