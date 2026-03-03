@@ -100,8 +100,8 @@ Once connected, try asking your AI assistant:
 ## Development
 
 ```bash
-git clone https://github.com/DanStuartDept/hse-servicefinder-mcp.git
-cd hse-servicefinder-mcp
+git clone https://github.com/DanStuartDept/hse-mcp-monorepo.git
+cd hse-mcp-monorepo
 pnpm install
 pnpm build
 ```

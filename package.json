@@ -6,7 +6,7 @@
   "type": "module",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/DanStuartDept/hse-servicefinder-mcp.git"
+    "url": "git+https://github.com/DanStuartDept/hse-mcp-monorepo.git"
   },
   "scripts": {
     "build": "turbo run build",
