@@ -2,7 +2,7 @@
   "name": "hse-servicefinder-mcp-monorepo",
   "version": "0.0.0",
   "private": true,
-  "description": "Monorepo for HSE Service Finder MCP packages",
+  "description": "Monorepo for MCP server packages",
   "type": "module",
   "repository": {
     "type": "git",
