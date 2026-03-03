@@ -12,6 +12,7 @@ import {
   searchServiceKinds,
   getServiceKind,
   findServicesAtLocation,
+  cache,
   BASE_URL,
 } from "../hse-api.js";
 
@@ -21,6 +22,7 @@ vi.stubGlobal("fetch", mockFetch);
 
 beforeEach(() => {
   mockFetch.mockReset();
+  cache.clear();
 });
 
 describe("buildQueryString", () => {
@@ -265,5 +267,77 @@ describe("findServicesAtLocation", () => {
     expect(result.services.count).toBe(0);
     expect(result.services.results).toEqual([]);
     expect(mockFetch).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("cache", () => {
+  beforeEach(() => {
+    cache.clear();
+  });
+
+  it("searchServiceKinds returns cached data on second call", async () => {
+    const mockData = { current_page: 1, count: 1, next: null, previous: null, results: [{ id: 1, name: "GP", slug: "gp" }] };
+    mockSuccessResponse(mockData);
+
+    const result1 = await searchServiceKinds();
+    const result2 = await searchServiceKinds();
+
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(result1).toEqual(mockData);
+    expect(result2).toEqual(mockData);
+  });
+
+  it("listSpecialDays returns cached data on second call", async () => {
+    const mockData = { current_page: 1, count: 1, next: null, previous: null, results: [{ id: 1, name: "Christmas Day", date: "2024-12-25" }] };
+    mockSuccessResponse(mockData);
+
+    const result1 = await listSpecialDays();
+    const result2 = await listSpecialDays();
+
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(result1).toEqual(mockData);
+    expect(result2).toEqual(mockData);
+  });
+
+  it("searchServiceKinds fetches again after TTL expires", async () => {
+    vi.useFakeTimers();
+
+    const mockData1 = { current_page: 1, count: 1, next: null, previous: null, results: [{ id: 1, name: "GP", slug: "gp" }] };
+    const mockData2 = { current_page: 1, count: 2, next: null, previous: null, results: [{ id: 1, name: "GP", slug: "gp" }, { id: 2, name: "Pharmacy", slug: "pharmacy" }] };
+    mockSuccessResponse(mockData1);
+    mockSuccessResponse(mockData2);
+
+    const result1 = await searchServiceKinds();
+    expect(result1).toEqual(mockData1);
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+
+    vi.setSystemTime(Date.now() + 3_600_001);
+
+    const result2 = await searchServiceKinds();
+    expect(result2).toEqual(mockData2);
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+
+    vi.useRealTimers();
+  });
+
+  it("listSpecialDays fetches again after TTL expires", async () => {
+    vi.useFakeTimers();
+
+    const mockData1 = { current_page: 1, count: 1, next: null, previous: null, results: [{ id: 1, name: "Christmas Day", date: "2024-12-25" }] };
+    const mockData2 = { current_page: 1, count: 2, next: null, previous: null, results: [{ id: 1, name: "Christmas Day", date: "2024-12-25" }, { id: 2, name: "New Year", date: "2025-01-01" }] };
+    mockSuccessResponse(mockData1);
+    mockSuccessResponse(mockData2);
+
+    const result1 = await listSpecialDays();
+    expect(result1).toEqual(mockData1);
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+
+    vi.setSystemTime(Date.now() + 3_600_001);
+
+    const result2 = await listSpecialDays();
+    expect(result2).toEqual(mockData2);
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+
+    vi.useRealTimers();
   });
 });
