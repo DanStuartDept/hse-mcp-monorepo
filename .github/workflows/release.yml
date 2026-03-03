@@ -3,6 +3,7 @@ name: Release
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -11,6 +12,7 @@ permissions:
 
 jobs:
   release:
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     outputs:
       hse_servicefinder_release_created: ${{ steps.release.outputs['packages/hse-servicefinder-mcp--release_created'] }}
@@ -24,7 +26,11 @@ jobs:
 
   publish:
     needs: release
-    if: ${{ needs.release.outputs.hse_servicefinder_release_created == 'true' }}
+    if: |
+      always() && (
+        needs.release.outputs.hse_servicefinder_release_created == 'true' ||
+        github.event_name == 'workflow_dispatch'
+      )
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
