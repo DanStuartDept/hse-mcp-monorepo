@@ -4,6 +4,25 @@
  */
 const BASE_URL = "https://servicefinder.hse.ie/servicefinder/v1";
 
+interface CacheEntry<T> {
+  data: T;
+  expires: number;
+}
+
+export const cache = new Map<string, CacheEntry<unknown>>();
+
+function getCached<T>(key: string): T | null {
+  const entry = cache.get(key) as CacheEntry<T> | undefined;
+  if (!entry || Date.now() > entry.expires) return null;
+  return entry.data;
+}
+
+function setCached<T>(key: string, data: T, ttlMs: number): void {
+  cache.set(key, { data, expires: Date.now() + ttlMs });
+}
+
+const CACHE_TTL_MS = 3_600_000; // 1 hour
+
 /**
  * Generic wrapper for paginated API responses from the HSE Service Finder API.
  *
@@ -646,7 +665,12 @@ export async function getServiceProvider(id: number): Promise<ServiceProviderRes
  */
 export async function listSpecialDays(params: SpecialDaysSearchParams = {}): Promise<PaginatedResponse<SpecialDayResult>> {
   const qs = buildQueryString(params as Record<string, string | number | string[] | undefined>);
-  return fetchJson<PaginatedResponse<SpecialDayResult>>(`${BASE_URL}/special-days/${qs}`);
+  const cacheKey = `special-days:${qs}`;
+  const cached = getCached<PaginatedResponse<SpecialDayResult>>(cacheKey);
+  if (cached) return cached;
+  const result = await fetchJson<PaginatedResponse<SpecialDayResult>>(`${BASE_URL}/special-days/${qs}`);
+  setCached(cacheKey, result, CACHE_TTL_MS);
+  return result;
 }
 
 /**
@@ -667,7 +691,12 @@ export async function getSpecialDay(id: number): Promise<SpecialDayResult> {
  */
 export async function searchServiceKinds(params: ServiceKindSearchParams = {}): Promise<PaginatedResponse<ServiceKindResult>> {
   const qs = buildQueryString(params as Record<string, string | number | string[] | undefined>);
-  return fetchJson<PaginatedResponse<ServiceKindResult>>(`${BASE_URL}/service-kind/${qs}`);
+  const cacheKey = `service-kinds:${qs}`;
+  const cached = getCached<PaginatedResponse<ServiceKindResult>>(cacheKey);
+  if (cached) return cached;
+  const result = await fetchJson<PaginatedResponse<ServiceKindResult>>(`${BASE_URL}/service-kind/${qs}`);
+  setCached(cacheKey, result, CACHE_TTL_MS);
+  return result;
 }
 
 /**
