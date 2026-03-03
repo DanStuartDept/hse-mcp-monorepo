@@ -11,6 +11,7 @@ import {
   getSpecialDay,
   searchServiceKinds,
   getServiceKind,
+  findServicesAtLocation,
   BASE_URL,
 } from "../hse-api.js";
 
@@ -232,5 +233,37 @@ describe("getServiceKind", () => {
     mockSuccessResponse({ id: 2, name: "Test Kind", slug: "test kind" });
     await getServiceKind("test kind");
     expect(mockFetch).toHaveBeenCalledWith(`${BASE_URL}/service-kind/test%20kind/`);
+  });
+});
+
+describe("findServicesAtLocation", () => {
+  it("returns location and services when location is found", async () => {
+    const mockLocation = { id: 1, name: "Cork University Hospital", slug: "cork-university-hospital", address1: "Wilton", town: "Cork", county: "Cork" };
+    const mockLocResponse = { current_page: 1, count: 1, next: null, previous: null, results: [mockLocation] };
+    const mockServices = { current_page: 1, count: 2, next: null, previous: null, results: [{ name: "Service A", slug: "service-a" }, { name: "Service B", slug: "service-b" }] };
+
+    mockSuccessResponse(mockLocResponse);
+    mockSuccessResponse(mockServices);
+
+    const result = await findServicesAtLocation("Cork University Hospital");
+
+    expect(result.location).toEqual(mockLocation);
+    expect(result.services).toEqual(mockServices);
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+    expect(mockFetch).toHaveBeenCalledWith(`${BASE_URL}/location/?name=Cork+University+Hospital&page_size=1`);
+    expect(mockFetch).toHaveBeenCalledWith(`${BASE_URL}/service/?location_slug=cork-university-hospital`);
+  });
+
+  it("returns null location and empty services when location is not found", async () => {
+    const mockLocResponse = { current_page: 1, count: 0, next: null, previous: null, results: [] };
+
+    mockSuccessResponse(mockLocResponse);
+
+    const result = await findServicesAtLocation("Nonexistent Hospital");
+
+    expect(result.location).toBeNull();
+    expect(result.services.count).toBe(0);
+    expect(result.services.results).toEqual([]);
+    expect(mockFetch).toHaveBeenCalledTimes(1);
   });
 });
