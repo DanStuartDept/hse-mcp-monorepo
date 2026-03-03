@@ -44,6 +44,17 @@ Pre-built prompt templates for common HSE service queries. MCP clients can prese
 | `check-opening-hours` | `service_name` (required), `day` (required), `time` (optional) | Check if a service is open on a specific day and optionally at a specific time |
 | `find-gp` | `location` (required) | Find GP (General Practitioner) services in a location in Ireland |
 
+## Resources
+
+MCP Resources provide pre-aggregated reference data that clients can read directly, without pagination.
+
+| Resource URI | Name | Description |
+|---|---|---|
+| `hse://service-kinds` | HSE Service Kinds | Complete list of HSE health service kind taxonomies |
+| `hse://special-days` | HSE Special Days | Bank holidays and exceptional closures affecting HSE service hours |
+
+Both resources automatically fetch and merge all pages from the underlying API (with a 20-page safety cap) and return a single JSON array.
+
 ---
 
 ## Getting Started
