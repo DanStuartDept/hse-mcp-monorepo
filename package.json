@@ -33,6 +33,7 @@
     "service-finder"
   ],
   "license": "MIT",
+  "packageManager": "pnpm@10.6.3",
   "engines": {
     "node": ">=18.0.0"
   },
