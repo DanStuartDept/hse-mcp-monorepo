@@ -4,59 +4,84 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Commands
 
+All commands run from the repo root via Turborepo + pnpm:
+
 ```bash
-npm run build       # Compile TypeScript → build/index.js (also chmod 755)
-npm run typecheck   # Type-check without emitting
-npm run lint        # ESLint over src/
-npm test            # Run Vitest suite once
-npm run test:watch  # Run Vitest in watch mode
-npm run inspector   # Launch MCP Inspector UI against the built server
+pnpm build        # Build all packages (tsc + chmod 755 on MCP server)
+pnpm typecheck    # Type-check all packages
+pnpm lint         # ESLint all packages
+pnpm test         # Run Vitest suite across all packages
 ```
 
-Run a single test file:
+Target a single package with `--filter`:
 ```bash
-npx vitest run src/__tests__/hse-api.test.ts
+pnpm --filter @danstuartdept/hse-servicefinder-mcp build
+pnpm --filter @danstuartdept/hse-servicefinder-mcp test
+```
+
+Run a single test file directly:
+```bash
+cd packages/hse-servicefinder-mcp && npx vitest run src/__tests__/hse-api.test.ts
+```
+
+Launch MCP Inspector against the built server:
+```bash
+cd packages/hse-servicefinder-mcp && npm run inspector
 ```
 
 ## Architecture
 
-This is an MCP (Model Context Protocol) server that wraps Ireland's HSE Service Finder REST API (`https://servicefinder.hse.ie/servicefinder/v1`), exposing health service data to AI assistants via tools, prompts, and resources.
+**pnpm monorepo** with Turborepo orchestration. Pipeline: `build → typecheck`, `build → test`, `build → lint`. Internal packages declare `workspace:*` deps and are not published.
+
+### Packages
+
+| Package | Published | Purpose |
+|---|---|---|
+| `packages/hse-servicefinder-mcp` | yes (`@danstuartdept/hse-servicefinder-mcp`) | MCP server for Ireland's HSE Service Finder REST API |
+| `packages/tsconfig` | no | Shared TypeScript config (`base.json`, `node.json`) |
+| `packages/eslint-config` | no | Shared ESLint config (`typescript-eslint` recommended) |
+| `packages/vitest-config` | no | Shared Vitest config (re-exported `defineConfig`) |
+| `packages/release-please-config` | no | Shared release-please defaults + `scripts/generate-config.js` |
+
+### `packages/hse-servicefinder-mcp`
+
+MCP server that wraps `https://servicefinder.hse.ie/servicefinder/v1`, exposing HSE health service data via tools, prompts, and resources.
 
 **Two-file source structure:**
 
-- `src/hse-api.ts` — API client layer. All TypeScript interfaces for HSE API response shapes, a generic `fetchJson<T>()` wrapper over native `fetch`, `buildQueryString()` (supports array params), and typed async functions (one per API endpoint). Exports `BASE_URL`, `buildQueryString`, `fetchJson`, and the `cache` map for testing.
-- `src/index.ts` — MCP server entry point. Instantiates `McpServer`, registers all tools, prompts, and resources with Zod-validated input schemas, and connects a `StdioServerTransport`. Contains `errorResponse()` and `fetchAllPages<T>()` helpers.
+- `src/hse-api.ts` — API client layer. TypeScript interfaces for HSE API shapes, generic `fetchJson<T>()` over native `fetch`, `buildQueryString()` (supports array params), and typed async functions (one per endpoint). Exports `BASE_URL`, `buildQueryString`, `fetchJson`, and the `cache` map for tests.
+- `src/index.ts` — MCP server entry point. Instantiates `McpServer`, registers all tools/prompts/resources with Zod-validated schemas, connects `StdioServerTransport`. Contains `errorResponse()` and `fetchAllPages<T>()` helpers.
 
 **Tool ↔ API function mapping:**
 
-| Tool | API function | Identifier type |
+| Tool | API function | Identifier |
 |---|---|---|
 | `search_locations` | `searchLocations()` | — |
-| `get_location` | `getLocation(slug)` | slug (string) |
+| `get_location` | `getLocation(slug)` | slug |
 | `search_services` | `searchServices()` | — |
-| `get_service` | `getService(slug)` | slug (string) |
+| `get_service` | `getService(slug)` | slug |
 | `search_service_providers` | `searchServiceProviders()` | — |
 | `get_service_provider` | `getServiceProvider(id)` | numeric id |
 | `search_service_kinds` | `searchServiceKinds()` | — |
-| `get_service_kind` | `getServiceKind(slug)` | slug (string) |
+| `get_service_kind` | `getServiceKind(slug)` | slug |
 | `list_special_days` | `listSpecialDays()` | — |
 | `get_special_day` | `getSpecialDay(id)` | numeric id |
-| `find_services_at_location` | `findServicesAtLocation()` | compound (resolves location by name, then fetches services) |
+| `find_services_at_location` | `findServicesAtLocation()` | compound — resolves location by name, then fetches services |
 
-**Prompts** (pre-built templates in `index.ts`): `find-local-services`, `check-opening-hours`, `find-gp`.
+**Prompts** (in `index.ts`): `find-local-services`, `check-opening-hours`, `find-gp`.
 
-**Resources** (static, pre-aggregated, in `index.ts`): `hse://service-kinds`, `hse://special-days`. Both use `fetchAllPages<T>()` (20-page safety cap) to merge all paginated results into a single JSON array.
+**Resources** (in `index.ts`): `hse://service-kinds`, `hse://special-days`. Both use `fetchAllPages<T>()` (20-page safety cap) to merge paginated results into a single JSON array.
 
-**Transport:** stdio only — no HTTP server. `stdout` is reserved for MCP protocol traffic; all logging goes to `stderr`.
+**Transport:** stdio only — no HTTP server. `stdout` is reserved for MCP protocol; all logging goes to `stderr`.
 
 ## Key conventions
 
 - All tool responses return JSON strings via `JSON.stringify(..., null, 2)`
 - Slug parameters are `encodeURIComponent()`-encoded before appending to URLs
 - Search functions return `PaginatedResponse<T>` (`current_page`, `count`, `next`, `previous`, `results[]`)
-- **In-memory TTL cache (1 hour):** only `searchServiceKinds` and `listSpecialDays` are cached; the `cache` map is exported from `hse-api.ts` for test inspection/clearing
-- **Error pattern:** detail/get tools call `errorResponse(err, suggestion)` with a `suggestion` field pointing to the corresponding search tool; search tools call `errorResponse(err)` without a suggestion. HTTP status is parsed from the error message string `"HSE API error: {status} ..."`.
-- Tests mock the API functions (`vi.mock("../hse-api.js", ...)`) to avoid network calls — don't add live API calls to tests
+- **TTL cache (1 hour):** only `searchServiceKinds` and `listSpecialDays` are cached; `cache` map exported from `hse-api.ts` for test clearing
+- **Error pattern:** detail/get tools call `errorResponse(err, suggestion)` pointing to the corresponding search tool; search tools call `errorResponse(err)` without suggestion
+- Tests use `vi.mock("../hse-api.js", ...)` — no live network calls in tests
 - Commits must follow Conventional Commits (`type(scope): message`) — enforced by commitlint
-- Node.js ≥ 18 required (uses native `fetch`)
-- **Publishing:** scoped to `@danstuartdept` on GitHub Packages (`https://npm.pkg.github.com`); releases are automated via release-please
+- **Release:** manifest mode release-please; only `packages/hse-servicefinder-mcp` is versioned. Workflow output keys use double-dash: `packages/hse-servicefinder-mcp--release_created`. Publish uses `pnpm --filter`.
+- Internal packages (`tsconfig`, `eslint-config`, `vitest-config`, `release-please-config`) use `version: "0.0.0"` and `private: true` — never added to `release-please-config.json`

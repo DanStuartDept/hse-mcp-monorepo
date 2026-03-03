@@ -1,0 +1,11 @@
+{
+  "name": "@danstuartdept/vitest-config",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "vitest": "^4.0.18"
+  }
+}
