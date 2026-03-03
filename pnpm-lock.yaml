@@ -82,6 +82,8 @@ importers:
         specifier: ^4.0.18
         version: 4.0.18(@types/node@25.3.3)(jiti@2.6.1)
 
+  packages/release-please-config: {}
+
   packages/tsconfig: {}
 
   packages/vitest-config:
