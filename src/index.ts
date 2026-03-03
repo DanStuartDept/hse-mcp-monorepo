@@ -36,6 +36,31 @@ const server = new McpServer({
   version: "1.0.0",
 });
 
+/**
+ * Builds a structured error response for MCP tool handlers.
+ * Parses the HTTP status code from the error message thrown by fetchJson.
+ *
+ * @param err - The caught error.
+ * @param suggestion - Optional suggestion to help the AI assistant self-correct.
+ * @returns An MCP tool response containing a JSON error object.
+ */
+function errorResponse(err: unknown, suggestion?: string) {
+  const message = err instanceof Error ? err.message : String(err);
+  const statusMatch = message.match(/HSE API error: (\d+)/);
+  const status = statusMatch ? parseInt(statusMatch[1], 10) : undefined;
+  return {
+    content: [{
+      type: "text" as const,
+      text: JSON.stringify({
+        error: true,
+        ...(status ? { status } : {}),
+        message,
+        ...(suggestion ? { suggestion } : {}),
+      }, null, 2),
+    }],
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Location Tools
 // ---------------------------------------------------------------------------
@@ -86,10 +111,11 @@ server.tool(
     tag: z.array(z.string()).optional().describe("Filter by tags"),
   },
   async (args) => {
-    const result = await searchLocations(args);
-    return {
-      content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
-    };
+    try {
+      return { content: [{ type: "text" as const, text: JSON.stringify(await searchLocations(args), null, 2) }] };
+    } catch (err) {
+      return errorResponse(err);
+    }
   },
 );
 
@@ -107,10 +133,11 @@ server.tool(
     slug: z.string().describe("The location slug identifier"),
   },
   async (args) => {
-    const result = await getLocation(args.slug);
-    return {
-      content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
-    };
+    try {
+      return { content: [{ type: "text" as const, text: JSON.stringify(await getLocation(args.slug), null, 2) }] };
+    } catch (err) {
+      return errorResponse(err, "Use search_locations to find a valid slug first");
+    }
   },
 );
 
@@ -168,10 +195,11 @@ server.tool(
     additional_field: z.string().optional().describe("Filter by additional field value"),
   },
   async (args) => {
-    const result = await searchServices(args);
-    return {
-      content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
-    };
+    try {
+      return { content: [{ type: "text" as const, text: JSON.stringify(await searchServices(args), null, 2) }] };
+    } catch (err) {
+      return errorResponse(err);
+    }
   },
 );
 
@@ -189,10 +217,11 @@ server.tool(
     slug: z.string().describe("The service slug identifier"),
   },
   async (args) => {
-    const result = await getService(args.slug);
-    return {
-      content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
-    };
+    try {
+      return { content: [{ type: "text" as const, text: JSON.stringify(await getService(args.slug), null, 2) }] };
+    } catch (err) {
+      return errorResponse(err, "Use search_services to find a valid slug first");
+    }
   },
 );
 
@@ -217,10 +246,11 @@ server.tool(
     name: z.string().optional().describe("Filter by name (partial match)"),
   },
   async (args) => {
-    const result = await searchServiceProviders(args);
-    return {
-      content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
-    };
+    try {
+      return { content: [{ type: "text" as const, text: JSON.stringify(await searchServiceProviders(args), null, 2) }] };
+    } catch (err) {
+      return errorResponse(err);
+    }
   },
 );
 
@@ -238,10 +268,11 @@ server.tool(
     id: z.number().int().describe("The service provider ID"),
   },
   async (args) => {
-    const result = await getServiceProvider(args.id);
-    return {
-      content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
-    };
+    try {
+      return { content: [{ type: "text" as const, text: JSON.stringify(await getServiceProvider(args.id), null, 2) }] };
+    } catch (err) {
+      return errorResponse(err, "Use search_service_providers to find a valid ID first");
+    }
   },
 );
 
@@ -266,10 +297,11 @@ server.tool(
     collection: z.string().optional().describe("Filter by collection slug"),
   },
   async (args) => {
-    const result = await searchServiceKinds(args);
-    return {
-      content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
-    };
+    try {
+      return { content: [{ type: "text" as const, text: JSON.stringify(await searchServiceKinds(args), null, 2) }] };
+    } catch (err) {
+      return errorResponse(err);
+    }
   },
 );
 
@@ -286,10 +318,11 @@ server.tool(
     slug: z.string().describe("The service kind slug identifier"),
   },
   async (args) => {
-    const result = await getServiceKind(args.slug);
-    return {
-      content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
-    };
+    try {
+      return { content: [{ type: "text" as const, text: JSON.stringify(await getServiceKind(args.slug), null, 2) }] };
+    } catch (err) {
+      return errorResponse(err, "Use search_service_kinds to find a valid slug first");
+    }
   },
 );
 
@@ -311,10 +344,11 @@ server.tool(
     page: z.number().int().optional().describe("Page number for pagination"),
   },
   async (args) => {
-    const result = await listSpecialDays(args);
-    return {
-      content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
-    };
+    try {
+      return { content: [{ type: "text" as const, text: JSON.stringify(await listSpecialDays(args), null, 2) }] };
+    } catch (err) {
+      return errorResponse(err);
+    }
   },
 );
 
@@ -331,10 +365,11 @@ server.tool(
     id: z.number().int().describe("The special day ID"),
   },
   async (args) => {
-    const result = await getSpecialDay(args.id);
-    return {
-      content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
-    };
+    try {
+      return { content: [{ type: "text" as const, text: JSON.stringify(await getSpecialDay(args.id), null, 2) }] };
+    } catch (err) {
+      return errorResponse(err, "Use list_special_days to find a valid ID first");
+    }
   },
 );
 
