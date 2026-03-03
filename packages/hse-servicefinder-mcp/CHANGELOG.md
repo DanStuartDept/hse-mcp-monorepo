@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.0](https://github.com/DanStuartDept/hse-mcp-monorepo/compare/hse-servicefinder-mcp-v1.3.0...hse-servicefinder-mcp-v1.4.0) (2026-03-03)
+
+
+### Features
+
+* migrate to pnpm + Turborepo monorepo (closes [#40](https://github.com/DanStuartDept/hse-mcp-monorepo/issues/40)) ([#58](https://github.com/DanStuartDept/hse-mcp-monorepo/issues/58)) ([1f17ca2](https://github.com/DanStuartDept/hse-mcp-monorepo/commit/1f17ca23a66bf39f2e042e8339f9778c06676492))
+
 ## [1.3.0](https://github.com/DanStuartDept/hse-servicefinder-mcp/compare/v1.2.0...v1.3.0) (2026-03-03)
 
 
