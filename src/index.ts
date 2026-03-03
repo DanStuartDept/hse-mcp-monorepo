@@ -413,6 +413,70 @@ server.tool(
 );
 
 // ---------------------------------------------------------------------------
+// Prompts
+// ---------------------------------------------------------------------------
+
+server.prompt(
+  "find-local-services",
+  "Find HSE health services of a given type near a location in Ireland",
+  {
+    service_type: z.string().describe("The type of health service to search for (e.g. pharmacy, hospital, GP)"),
+    location: z.string().describe("The location in Ireland to search near (e.g. Cork, Dublin, Galway)"),
+  },
+  async ({ service_type, location }) => ({
+    messages: [
+      {
+        role: "user" as const,
+        content: {
+          type: "text" as const,
+          text: `Find ${service_type} services available near ${location} in Ireland. Use the HSE Service Finder tools to search and return the top results with names, addresses, and opening hours.`,
+        },
+      },
+    ],
+  }),
+);
+
+server.prompt(
+  "check-opening-hours",
+  "Check if a HSE service is open on a specific day and optionally at a specific time",
+  {
+    service_name: z.string().describe("The name of the HSE service to check"),
+    day: z.string().describe("The day to check (e.g. Monday, 2024-12-25)"),
+    time: z.string().optional().describe("Optional time to check in HH:MM format (e.g. 09:30)"),
+  },
+  async ({ service_name, day, time }) => ({
+    messages: [
+      {
+        role: "user" as const,
+        content: {
+          type: "text" as const,
+          text: `Check if ${service_name} is open on ${day}${time ? ` at ${time}` : ""} using the HSE Service Finder. Return the opening hours and any relevant notes.`,
+        },
+      },
+    ],
+  }),
+);
+
+server.prompt(
+  "find-gp",
+  "Find GP (General Practitioner) services in a location in Ireland",
+  {
+    location: z.string().describe("The location in Ireland to search for GPs (e.g. Limerick, Waterford)"),
+  },
+  async ({ location }) => ({
+    messages: [
+      {
+        role: "user" as const,
+        content: {
+          type: "text" as const,
+          text: `Find GP (General Practitioner) services available in ${location}, Ireland. List the top results with addresses, phone numbers, and opening hours.`,
+        },
+      },
+    ],
+  }),
+);
+
+// ---------------------------------------------------------------------------
 // Server Bootstrap
 // ---------------------------------------------------------------------------
 
