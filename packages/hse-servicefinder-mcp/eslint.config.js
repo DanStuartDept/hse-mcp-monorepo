@@ -1,10 +1,3 @@
-import eslint from "@eslint/js";
-import tseslint from "typescript-eslint";
+import baseConfig from "@danstuartdept/eslint-config";
 
-export default tseslint.config(
-  eslint.configs.recommended,
-  ...tseslint.configs.recommended,
-  {
-    ignores: ["build/**", "node_modules/**"],
-  },
-);
+export default baseConfig;
