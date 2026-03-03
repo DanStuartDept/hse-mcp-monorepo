@@ -1,5 +1,5 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "@danstuartdept/tsconfig/node.json",
   "compilerOptions": {
     "outDir": "./build",
     "rootDir": "./src"

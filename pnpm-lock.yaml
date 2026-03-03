@@ -27,6 +27,9 @@ importers:
         specifier: ^4.3.6
         version: 4.3.6
     devDependencies:
+      '@danstuartdept/tsconfig':
+        specifier: workspace:*
+        version: link:../tsconfig
       '@eslint/js':
         specifier: ^10.0.1
         version: 10.0.1(eslint@10.0.2(jiti@2.6.1))
@@ -51,6 +54,8 @@ importers:
       vitest:
         specifier: ^4.0.18
         version: 4.0.18(@types/node@25.3.3)(jiti@2.6.1)
+
+  packages/tsconfig: {}
 
 packages:
 
