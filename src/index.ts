@@ -28,6 +28,12 @@ import {
   findServicesAtLocation,
 } from "./hse-api.js";
 
+import type {
+  PaginatedResponse,
+  ServiceKindResult,
+  SpecialDayResult,
+} from "./hse-api.js";
+
 /**
  * The MCP server instance for the HSE Service Finder.
  * Exposes tools that wrap the public HSE Service Finder REST API.
@@ -471,6 +477,94 @@ server.prompt(
           type: "text" as const,
           text: `Find GP (General Practitioner) services available in ${location}, Ireland. List the top results with addresses, phone numbers, and opening hours.`,
         },
+      },
+    ],
+  }),
+);
+
+// ---------------------------------------------------------------------------
+// Resources
+// ---------------------------------------------------------------------------
+
+/**
+ * Fetches all pages from a paginated HSE API endpoint.
+ *
+ * @typeParam T - The type of each item in the results array.
+ * @param fetchFn - A function that fetches a single page by page number.
+ * @returns An array containing all results across all pages.
+ */
+async function fetchAllPages<T>(
+  fetchFn: (page: number) => Promise<PaginatedResponse<T>>,
+): Promise<T[]> {
+  const allResults: T[] = [];
+  let page = 1;
+  while (true) {
+    const response = await fetchFn(page);
+    allResults.push(...response.results);
+    if (!response.next) break;
+    page++;
+    if (page > 20) break; // safety cap
+  }
+  return allResults;
+}
+
+/**
+ * Resource: hse://service-kinds
+ *
+ * Exposes the complete list of HSE service kind taxonomies as a static
+ * MCP resource. All pages are fetched and merged into a single JSON array.
+ */
+server.resource(
+  "hse-service-kinds",
+  "hse://service-kinds",
+  {
+    description: "Complete list of HSE health service kind taxonomies",
+    mimeType: "application/json",
+  },
+  async (uri) => ({
+    contents: [
+      {
+        uri: uri.href,
+        mimeType: "application/json",
+        text: JSON.stringify(
+          await fetchAllPages<ServiceKindResult>((page) =>
+            searchServiceKinds({ page }),
+          ),
+          null,
+          2,
+        ),
+      },
+    ],
+  }),
+);
+
+/**
+ * Resource: hse://special-days
+ *
+ * Exposes all HSE special days (bank holidays and exceptional closures)
+ * as a static MCP resource. All pages are fetched and merged into a
+ * single JSON array.
+ */
+server.resource(
+  "hse-special-days",
+  "hse://special-days",
+  {
+    description:
+      "Bank holidays and exceptional closures affecting HSE service hours",
+    mimeType: "application/json",
+  },
+  async (uri) => ({
+    contents: [
+      {
+        uri: uri.href,
+        mimeType: "application/json",
+        text: JSON.stringify(
+          await fetchAllPages<SpecialDayResult>((page) =>
+            listSpecialDays({ page }),
+          ),
+          null,
+          2,
+        ),
       },
     ],
   }),
