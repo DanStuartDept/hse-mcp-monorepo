@@ -55,7 +55,7 @@ server.tool(
     /** @param page_size - Number of results per page. */
     page_size: z.number().int().optional().describe("Number of results per page"),
     /** @param loc - GeoLocation point in `longitude,latitude` format. */
-    loc: z.string().optional().describe("GeoLocation point: longitude,latitude"),
+    loc: z.string().optional().describe("Comma-separated longitude and latitude for proximity search. Format: \"lon,lat\" e.g. \"-6.2603,53.3498\" (Dublin). Longitude first, then latitude."),
     /** @param kind - Filter by kind (partial match, comma-separated). */
     kind: z.string().optional().describe("Filter by kind (partial match, comma-separated)"),
     /** @param name - Filter by name (partial match). */
@@ -67,11 +67,11 @@ server.tool(
     /** @param health_region - Filter by Health Region name (partial match). */
     health_region: z.string().optional().describe("Filter by Health Region name (partial match)"),
     /** @param day - Day filter: MM-DD for special days, 1–7 for weekdays. */
-    day: z.string().optional().describe("Filter by day: MM-DD for special days, weekday number 1-7 for regular days"),
+    day: z.string().optional().describe("Day of the week to filter by opening hours. Use a weekday number (1=Monday … 7=Sunday), or MM-DD for special days e.g. \"12-25\" for Christmas."),
     /** @param time - Time of day in HH:MM format. Must be combined with `day`. */
-    time: z.string().optional().describe("Filter by time of day (HH:MM). Must be used with 'day'"),
+    time: z.string().optional().describe("Time of day to filter by opening hours, in 24-hour HH:MM format e.g. \"09:00\", \"14:30\", \"17:45\". Must be used together with the day parameter."),
     /** @param order_by - Sort field: `name` or `created_at`. Prefix `-` for descending. */
-    order_by: z.string().optional().describe("Sort by 'name' or 'created_at' (prefix with '-' for descending)"),
+    order_by: z.string().optional().describe("Sort order for results. Common values: \"name\", \"-name\" (descending), \"created_at\", \"-created_at\". Prefix with \"-\" for descending order."),
     /** @param kind_slugs - Kind slug filter (exact match, comma-separated). */
     kind_slugs: z.string().optional().describe("Filter by kind slugs (exact match, comma-separated)"),
     /** @param collection - Collection slug filter. */
@@ -104,7 +104,7 @@ server.tool(
   "Get detailed information about a specific HSE location by its slug identifier.",
   {
     /** @param slug - The unique slug identifier of the location. */
-    slug: z.string().describe("The location slug identifier"),
+    slug: z.string().describe("URL slug identifier for the location, as returned in the slug field of search_locations results e.g. \"cork-university-hospital\", \"st-james-s-hospital\"."),
   },
   async (args) => {
     const result = await getLocation(args.slug);
@@ -133,7 +133,7 @@ server.tool(
     /** @param page_size - Number of results per page. */
     page_size: z.number().int().optional().describe("Number of results per page"),
     /** @param loc - GeoLocation point in `longitude,latitude` format. */
-    loc: z.string().optional().describe("GeoLocation point: longitude,latitude"),
+    loc: z.string().optional().describe("Comma-separated longitude and latitude for proximity search. Format: \"lon,lat\" e.g. \"-6.2603,53.3498\" (Dublin). Longitude first, then latitude."),
     /** @param name - Filter by service name (partial match). */
     name: z.string().optional().describe("Filter by name (partial match)"),
     /** @param location_slug - Filter by location slug (exact match). */
@@ -141,9 +141,9 @@ server.tool(
     /** @param kind - Filter by service kind (partial match). */
     kind: z.string().optional().describe("Filter by service kind (partial match)"),
     /** @param day - Day filter: MM-DD for special days, 1–7 for weekdays. */
-    day: z.string().optional().describe("Filter by day: MM-DD for special days, weekday number 1-7 for regular days"),
+    day: z.string().optional().describe("Day of the week to filter by opening hours. Use a weekday number (1=Monday … 7=Sunday), or MM-DD for special days e.g. \"12-25\" for Christmas."),
     /** @param time - Time of day in HH:MM format. Must be combined with `day`. */
-    time: z.string().optional().describe("Filter by time of day (HH:MM). Must be used with 'day'"),
+    time: z.string().optional().describe("Time of day to filter by opening hours, in 24-hour HH:MM format e.g. \"09:00\", \"14:30\", \"17:45\". Must be used together with the day parameter."),
     /** @param age - Filter services available for a specific age. */
     age: z.string().optional().describe("Filter by age eligibility"),
     /** @param iha - Filter by IHA name (partial match). */
@@ -155,7 +155,7 @@ server.tool(
     /** @param department_name - Filter by department name (partial match). */
     department_name: z.string().optional().describe("Filter by department name (partial match)"),
     /** @param order_by - Sort field. Prefix `-` for descending. */
-    order_by: z.string().optional().describe("Sort results (prefix with '-' for descending)"),
+    order_by: z.string().optional().describe("Sort order for results. Common values: \"name\", \"-name\" (descending), \"created_at\", \"-created_at\". Prefix with \"-\" for descending order."),
     /** @param collection - Collection slug filter. */
     collection: z.string().optional().describe("Filter by collection slug"),
     /** @param locale - Locale for disruption text language. */
@@ -186,7 +186,7 @@ server.tool(
   "Get detailed information about a specific HSE service by its slug identifier.",
   {
     /** @param slug - The unique slug identifier of the service. */
-    slug: z.string().describe("The service slug identifier"),
+    slug: z.string().describe("URL slug identifier for the service, as returned in the slug field of search_services results."),
   },
   async (args) => {
     const result = await getService(args.slug);
@@ -235,7 +235,7 @@ server.tool(
   "Get detailed information about a specific HSE service provider by its ID.",
   {
     /** @param id - The unique integer identifier of the service provider. */
-    id: z.number().int().describe("The service provider ID"),
+    id: z.number().int().describe("Numeric ID of the service provider, as returned in the id field of search_service_providers results."),
   },
   async (args) => {
     const result = await getServiceProvider(args.id);
@@ -283,7 +283,7 @@ server.tool(
   "Get details about a specific HSE service kind by its slug.",
   {
     /** @param slug - The unique slug identifier of the service kind. */
-    slug: z.string().describe("The service kind slug identifier"),
+    slug: z.string().describe("URL slug identifier for the service kind, as returned in the slug field of search_service_kinds results."),
   },
   async (args) => {
     const result = await getServiceKind(args.slug);
@@ -328,7 +328,7 @@ server.tool(
   "Get details about a specific special day by its ID.",
   {
     /** @param id - The unique integer identifier of the special day. */
-    id: z.number().int().describe("The special day ID"),
+    id: z.number().int().describe("Numeric ID of the special day, as returned in the id field of list_special_days results."),
   },
   async (args) => {
     const result = await getSpecialDay(args.id);
