@@ -9,10 +9,10 @@
     "url": "git+https://github.com/DanStuartDept/hse-servicefinder-mcp.git"
   },
   "scripts": {
-    "build": "pnpm --filter @danstuartdept/hse-servicefinder-mcp build",
-    "test": "pnpm --filter @danstuartdept/hse-servicefinder-mcp test",
-    "lint": "pnpm --filter @danstuartdept/hse-servicefinder-mcp lint",
-    "typecheck": "pnpm --filter @danstuartdept/hse-servicefinder-mcp typecheck"
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck"
   },
   "license": "MIT",
   "packageManager": "pnpm@10.6.3",
@@ -21,6 +21,7 @@
   },
   "devDependencies": {
     "@commitlint/cli": "^20.4.2",
-    "@commitlint/config-conventional": "^20.4.2"
+    "@commitlint/config-conventional": "^20.4.2",
+    "turbo": "^2.8.12"
   }
 }
