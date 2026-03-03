@@ -1,5 +1,5 @@
 {
-  "name": "hse-servicefinder-mcp-monorepo",
+  "name": "hse-mcp-monorepo",
   "version": "0.0.0",
   "private": true,
   "description": "Monorepo for MCP server packages",

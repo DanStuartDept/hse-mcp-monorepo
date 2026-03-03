@@ -1,4 +1,4 @@
-# HSE ServiceFinder MCP
+# HSE MCP
 
 Monorepo for MCP servers that wrap Ireland's HSE (Health Service Executive) APIs.
 
