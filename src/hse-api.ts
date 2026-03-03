@@ -4,6 +4,25 @@
  */
 const BASE_URL = "https://servicefinder.hse.ie/servicefinder/v1";
 
+interface CacheEntry<T> {
+  data: T;
+  expires: number;
+}
+
+export const cache = new Map<string, CacheEntry<unknown>>();
+
+function getCached<T>(key: string): T | null {
+  const entry = cache.get(key) as CacheEntry<T> | undefined;
+  if (!entry || Date.now() > entry.expires) return null;
+  return entry.data;
+}
+
+function setCached<T>(key: string, data: T, ttlMs: number): void {
+  cache.set(key, { data, expires: Date.now() + ttlMs });
+}
+
+const CACHE_TTL_MS = 3_600_000; // 1 hour
+
 /**
  * Generic wrapper for paginated API responses from the HSE Service Finder API.
  *
@@ -646,7 +665,12 @@ export async function getServiceProvider(id: number): Promise<ServiceProviderRes
  */
 export async function listSpecialDays(params: SpecialDaysSearchParams = {}): Promise<PaginatedResponse<SpecialDayResult>> {
   const qs = buildQueryString(params as Record<string, string | number | string[] | undefined>);
-  return fetchJson<PaginatedResponse<SpecialDayResult>>(`${BASE_URL}/special-days/${qs}`);
+  const cacheKey = `special-days:${qs}`;
+  const cached = getCached<PaginatedResponse<SpecialDayResult>>(cacheKey);
+  if (cached) return cached;
+  const result = await fetchJson<PaginatedResponse<SpecialDayResult>>(`${BASE_URL}/special-days/${qs}`);
+  setCached(cacheKey, result, CACHE_TTL_MS);
+  return result;
 }
 
 /**
@@ -667,7 +691,12 @@ export async function getSpecialDay(id: number): Promise<SpecialDayResult> {
  */
 export async function searchServiceKinds(params: ServiceKindSearchParams = {}): Promise<PaginatedResponse<ServiceKindResult>> {
   const qs = buildQueryString(params as Record<string, string | number | string[] | undefined>);
-  return fetchJson<PaginatedResponse<ServiceKindResult>>(`${BASE_URL}/service-kind/${qs}`);
+  const cacheKey = `service-kinds:${qs}`;
+  const cached = getCached<PaginatedResponse<ServiceKindResult>>(cacheKey);
+  if (cached) return cached;
+  const result = await fetchJson<PaginatedResponse<ServiceKindResult>>(`${BASE_URL}/service-kind/${qs}`);
+  setCached(cacheKey, result, CACHE_TTL_MS);
+  return result;
 }
 
 /**
@@ -678,6 +707,57 @@ export async function searchServiceKinds(params: ServiceKindSearchParams = {}): 
  */
 export async function getServiceKind(slug: string): Promise<ServiceKindResult> {
   return fetchJson<ServiceKindResult>(`${BASE_URL}/service-kind/${encodeURIComponent(slug)}/`);
+}
+
+/**
+ * Finds health services at a named location in a single compound operation.
+ * Internally resolves the location by name and fetches matching services.
+ *
+ * @param locationName - Human-readable location name to search for.
+ * @param serviceParams - Optional service filter parameters (location_slug is set automatically).
+ * @returns The matched location (or null) and a paginated list of services.
+ */
+export async function findServicesAtLocation(
+  locationName: string,
+  serviceParams: Omit<ServiceSearchParams, "location_slug"> = {},
+): Promise<{ location: LocationResult | null; services: PaginatedResponse<ServiceResult> }> {
+  const locResults = await searchLocations({ name: locationName, page_size: 1 });
+  const location = locResults.results[0] ?? null;
+
+  if (!location) {
+    return {
+      location: null,
+      services: { current_page: 1, count: 0, next: null, previous: null, results: [] },
+    };
+  }
+
+  const services = await searchServices({ ...serviceParams, location_slug: location.slug });
+  return { location, services };
+}
+
+/**
+ * Fetches all pages of a paginated HSE API endpoint by following `next` links.
+ * Intended for small, relatively static datasets only.
+ * Stops after MAX_PAGES pages as a safety cap.
+ *
+ * @typeParam T - The type of items in the results array.
+ * @param firstPageUrl - The URL of the first page to fetch.
+ * @returns All results aggregated across all pages.
+ */
+export async function fetchAll<T>(firstPageUrl: string): Promise<T[]> {
+  const results: T[] = [];
+  let url: string | null = firstPageUrl;
+  let pages = 0;
+  const MAX_PAGES = 20;
+
+  while (url !== null && pages < MAX_PAGES) {
+    const page: PaginatedResponse<T> = await fetchJson<PaginatedResponse<T>>(url);
+    results.push(...page.results);
+    url = page.next;
+    pages++;
+  }
+
+  return results;
 }
 
 // Exported for testing

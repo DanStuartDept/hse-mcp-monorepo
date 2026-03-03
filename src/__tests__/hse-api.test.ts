@@ -11,6 +11,9 @@ import {
   getSpecialDay,
   searchServiceKinds,
   getServiceKind,
+  findServicesAtLocation,
+  cache,
+  fetchAll,
   BASE_URL,
 } from "../hse-api.js";
 
@@ -20,6 +23,7 @@ vi.stubGlobal("fetch", mockFetch);
 
 beforeEach(() => {
   mockFetch.mockReset();
+  cache.clear();
 });
 
 describe("buildQueryString", () => {
@@ -232,5 +236,178 @@ describe("getServiceKind", () => {
     mockSuccessResponse({ id: 2, name: "Test Kind", slug: "test kind" });
     await getServiceKind("test kind");
     expect(mockFetch).toHaveBeenCalledWith(`${BASE_URL}/service-kind/test%20kind/`);
+  });
+});
+
+describe("findServicesAtLocation", () => {
+  it("returns location and services when location is found", async () => {
+    const mockLocation = { id: 1, name: "Cork University Hospital", slug: "cork-university-hospital", address1: "Wilton", town: "Cork", county: "Cork" };
+    const mockLocResponse = { current_page: 1, count: 1, next: null, previous: null, results: [mockLocation] };
+    const mockServices = { current_page: 1, count: 2, next: null, previous: null, results: [{ name: "Service A", slug: "service-a" }, { name: "Service B", slug: "service-b" }] };
+
+    mockSuccessResponse(mockLocResponse);
+    mockSuccessResponse(mockServices);
+
+    const result = await findServicesAtLocation("Cork University Hospital");
+
+    expect(result.location).toEqual(mockLocation);
+    expect(result.services).toEqual(mockServices);
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+    expect(mockFetch).toHaveBeenCalledWith(`${BASE_URL}/location/?name=Cork+University+Hospital&page_size=1`);
+    expect(mockFetch).toHaveBeenCalledWith(`${BASE_URL}/service/?location_slug=cork-university-hospital`);
+  });
+
+  it("returns null location and empty services when location is not found", async () => {
+    const mockLocResponse = { current_page: 1, count: 0, next: null, previous: null, results: [] };
+
+    mockSuccessResponse(mockLocResponse);
+
+    const result = await findServicesAtLocation("Nonexistent Hospital");
+
+    expect(result.location).toBeNull();
+    expect(result.services.count).toBe(0);
+    expect(result.services.results).toEqual([]);
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("cache", () => {
+  beforeEach(() => {
+    cache.clear();
+  });
+
+  it("searchServiceKinds returns cached data on second call", async () => {
+    const mockData = { current_page: 1, count: 1, next: null, previous: null, results: [{ id: 1, name: "GP", slug: "gp" }] };
+    mockSuccessResponse(mockData);
+
+    const result1 = await searchServiceKinds();
+    const result2 = await searchServiceKinds();
+
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(result1).toEqual(mockData);
+    expect(result2).toEqual(mockData);
+  });
+
+  it("listSpecialDays returns cached data on second call", async () => {
+    const mockData = { current_page: 1, count: 1, next: null, previous: null, results: [{ id: 1, name: "Christmas Day", date: "2024-12-25" }] };
+    mockSuccessResponse(mockData);
+
+    const result1 = await listSpecialDays();
+    const result2 = await listSpecialDays();
+
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(result1).toEqual(mockData);
+    expect(result2).toEqual(mockData);
+  });
+
+  it("searchServiceKinds fetches again after TTL expires", async () => {
+    vi.useFakeTimers();
+
+    const mockData1 = { current_page: 1, count: 1, next: null, previous: null, results: [{ id: 1, name: "GP", slug: "gp" }] };
+    const mockData2 = { current_page: 1, count: 2, next: null, previous: null, results: [{ id: 1, name: "GP", slug: "gp" }, { id: 2, name: "Pharmacy", slug: "pharmacy" }] };
+    mockSuccessResponse(mockData1);
+    mockSuccessResponse(mockData2);
+
+    const result1 = await searchServiceKinds();
+    expect(result1).toEqual(mockData1);
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+
+    vi.setSystemTime(Date.now() + 3_600_001);
+
+    const result2 = await searchServiceKinds();
+    expect(result2).toEqual(mockData2);
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+
+    vi.useRealTimers();
+  });
+
+  it("listSpecialDays fetches again after TTL expires", async () => {
+    vi.useFakeTimers();
+
+    const mockData1 = { current_page: 1, count: 1, next: null, previous: null, results: [{ id: 1, name: "Christmas Day", date: "2024-12-25" }] };
+    const mockData2 = { current_page: 1, count: 2, next: null, previous: null, results: [{ id: 1, name: "Christmas Day", date: "2024-12-25" }, { id: 2, name: "New Year", date: "2025-01-01" }] };
+    mockSuccessResponse(mockData1);
+    mockSuccessResponse(mockData2);
+
+    const result1 = await listSpecialDays();
+    expect(result1).toEqual(mockData1);
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+
+    vi.setSystemTime(Date.now() + 3_600_001);
+
+    const result2 = await listSpecialDays();
+    expect(result2).toEqual(mockData2);
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+
+    vi.useRealTimers();
+  });
+});
+
+describe("fetchAll", () => {
+  it("returns all results from a single page", async () => {
+    mockSuccessResponse({
+      current_page: 1,
+      count: 1,
+      next: null,
+      previous: null,
+      results: [{ id: 1 }],
+    });
+
+    const results = await fetchAll("http://example.com/api/items/");
+    expect(results).toEqual([{ id: 1 }]);
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("follows next links across multiple pages", async () => {
+    mockSuccessResponse({
+      current_page: 1,
+      count: 2,
+      next: "http://example.com/api/items/?page=2",
+      previous: null,
+      results: [{ id: 1 }],
+    });
+    mockSuccessResponse({
+      current_page: 2,
+      count: 2,
+      next: null,
+      previous: "http://example.com/api/items/",
+      results: [{ id: 2 }],
+    });
+
+    const results = await fetchAll("http://example.com/api/items/");
+    expect(results).toEqual([{ id: 1 }, { id: 2 }]);
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+    expect(mockFetch).toHaveBeenCalledWith("http://example.com/api/items/");
+    expect(mockFetch).toHaveBeenCalledWith("http://example.com/api/items/?page=2");
+  });
+
+  it("returns an empty array when results are empty", async () => {
+    mockSuccessResponse({
+      current_page: 1,
+      count: 0,
+      next: null,
+      previous: null,
+      results: [],
+    });
+
+    const results = await fetchAll("http://example.com/api/items/");
+    expect(results).toEqual([]);
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("stops at the safety cap of 20 pages", async () => {
+    for (let i = 0; i < 20; i++) {
+      mockSuccessResponse({
+        current_page: i + 1,
+        count: 100,
+        next: `http://example.com/api/items/?page=${i + 2}`,
+        previous: null,
+        results: [{ id: i + 1 }],
+      });
+    }
+
+    const results = await fetchAll("http://example.com/api/items/");
+    expect(results).toHaveLength(20);
+    expect(mockFetch).toHaveBeenCalledTimes(20);
   });
 });
