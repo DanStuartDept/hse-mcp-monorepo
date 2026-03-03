@@ -25,6 +25,7 @@ import {
   getSpecialDay,
   searchServiceKinds,
   getServiceKind,
+  findServicesAtLocation,
 } from "./hse-api.js";
 
 /**
@@ -335,6 +336,44 @@ server.tool(
     return {
       content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
     };
+  },
+);
+
+// ---------------------------------------------------------------------------
+// Compound Workflow Tools
+// ---------------------------------------------------------------------------
+
+/**
+ * Tool: find_services_at_location
+ *
+ * Resolves a location by name and fetches matching services in one step,
+ * reducing multi-step round-trips for AI assistants.
+ */
+server.tool(
+  "find_services_at_location",
+  "Find health services at a named location in a single step. Resolves the location by name then fetches matching services, reducing multi-step round-trips.",
+  {
+    location_name: z.string().describe("Human-readable name of the location to search e.g. 'Cork University Hospital', 'Beaumont Hospital'."),
+    kind: z.string().optional().describe("Filter services by kind (partial match)."),
+    day: z.string().optional().describe("Day of the week (1-7) or MM-DD for special days."),
+    time: z.string().optional().describe("Time in HH:MM format. Use with day."),
+    age: z.string().optional().describe("Filter services available for a specific age."),
+    page: z.number().int().optional().describe("Page number."),
+    page_size: z.number().int().optional().describe("Results per page."),
+    iha: z.string().optional().describe("Filter by Integrated Health Area name."),
+    health_region: z.string().optional().describe("Filter by Health Region name."),
+    service_provider: z.string().optional().describe("Filter by ServiceProvider name."),
+    department_name: z.string().optional().describe("Filter by department name."),
+    order_by: z.string().optional().describe("Sort order e.g. 'name', '-name'."),
+  },
+  async ({ location_name, ...serviceParams }) => {
+    try {
+      const result = await findServicesAtLocation(location_name, serviceParams);
+      return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return { content: [{ type: "text" as const, text: JSON.stringify({ error: true, message }, null, 2) }] };
+    }
   },
 );
 

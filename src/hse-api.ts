@@ -680,5 +680,31 @@ export async function getServiceKind(slug: string): Promise<ServiceKindResult> {
   return fetchJson<ServiceKindResult>(`${BASE_URL}/service-kind/${encodeURIComponent(slug)}/`);
 }
 
+/**
+ * Finds health services at a named location in a single compound operation.
+ * Internally resolves the location by name and fetches matching services.
+ *
+ * @param locationName - Human-readable location name to search for.
+ * @param serviceParams - Optional service filter parameters (location_slug is set automatically).
+ * @returns The matched location (or null) and a paginated list of services.
+ */
+export async function findServicesAtLocation(
+  locationName: string,
+  serviceParams: Omit<ServiceSearchParams, "location_slug"> = {},
+): Promise<{ location: LocationResult | null; services: PaginatedResponse<ServiceResult> }> {
+  const locResults = await searchLocations({ name: locationName, page_size: 1 });
+  const location = locResults.results[0] ?? null;
+
+  if (!location) {
+    return {
+      location: null,
+      services: { current_page: 1, count: 0, next: null, previous: null, results: [] },
+    };
+  }
+
+  const services = await searchServices({ ...serviceParams, location_slug: location.slug });
+  return { location, services };
+}
+
 // Exported for testing
 export { BASE_URL, buildQueryString, fetchJson };
