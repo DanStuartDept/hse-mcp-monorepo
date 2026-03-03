@@ -44,6 +44,7 @@
   "devDependencies": {
     "@danstuartdept/eslint-config": "workspace:*",
     "@danstuartdept/tsconfig": "workspace:*",
+    "@danstuartdept/vitest-config": "workspace:*",
     "@eslint/js": "^10.0.1",
     "@types/node": "^25.3.3",
     "@typescript-eslint/eslint-plugin": "^8.56.1",
